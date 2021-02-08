@@ -7,10 +7,20 @@
 	* 3.1. [_HttpServletBean_](#HttpServletBean_)
 	* 3.2. [_FrameworkServlet_](#FrameworkServlet_)
 		* 3.2.1. [_FrameworkServlet_ 关键属性](#FrameworkServlet_-1)
-		* 3.2.2. [_#initServletBean_ ——真正初始化_WebApplicationContext_ 的入口](#initServletBean__WebApplicationContext_)
+		* 3.2.2. [_#initServletBean_ ——真正初始化 _WebApplicationContext_ 的入口](#initServletBean__WebApplicationContext_)
 		* 3.2.3. [_#initWebApplicationContext_ ——初始化 _WebApplicationContext_ 入口](#initWebApplicationContext__WebApplicationContext_)
 		* 3.2.4. [_#configureAndRefreshWebApplicationContext_ ——初始化后处理，刷新_WebApplicationContext_](#configureAndRefreshWebApplicationContext__WebApplicationContext_)
 		* 3.2.5. [_#onRefresh_——刷新完成后操作，开始初始化MVC组件](#onRefresh_MVC)
+* 4. [_DispatcherServlet_ 请求处理工作揭秘](#DispatcherServlet_-1)
+	* 4.1. [一切都要从 _FrameworkServlet_ 开始说起](#_FrameworkServlet_)
+		* 4.1.1. [HTTP请求处理的开始—— _#service_](#HTTP_service_)
+		* 4.1.2. [_#doGet_ & _#doPost_ & _#doPut_ & _#doDelete_](#doGet__doPost__doPut__doDelete_)
+		* 4.1.3. [_#doOptions_ & _#doTrace_ (不常用)](#doOptions__doTrace_)
+		* 4.1.4. [_#processRequest_ —— 处理请求的核心方法](#processRequest_)
+	* 4.2. [_DispatcherServlet_ 核心处理方法 _#doService_](#DispatcherServlet__doService_)
+	* 4.3. [_#doDispatch_ 请求属性处理完毕，执行请求分发](#doDispatch_)
+	* 4.4. [_processDispatchResult_ ——转发后处理](#processDispatchResult_)
+	* 4.5. [_#render_ ——页面渲染](#render_)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
@@ -297,3 +307,459 @@ protected void initStrategies(ApplicationContext context) {
 
 大致了解DispatcherServlet的UML类图关系，下面就可以正式开始开启DispatcherServlet的探秘之旅了
 
+##  4. <a name='DispatcherServlet_-1'></a>_DispatcherServlet_ 请求处理工作揭秘
+
+###  4.1. <a name='_FrameworkServlet_'></a>一切都要从 _FrameworkServlet_ 开始说起
+
+虽然请求首先是被 DispatcherServlet 所处理，但是实际上，FrameworkServlet 才是真正的入门,，其定义了关于请求的一系列操作。FrameworkServlet 会实现下列方法:
+
+- `#doGet(HttpServletRequest request, HttpServletResponse response)`
+- `#doPost(HttpServletRequest request, HttpServletResponse response)`
+- `#doPut(HttpServletRequest request, HttpServletResponse response)`
+- `#doDelete(HttpServletRequest request, HttpServletResponse response)`
+- `#doOptions(HttpServletRequest request, HttpServletResponse response)`
+- `#doTrace(HttpServletRequest request, HttpServletResponse response)`
+- `#service(HttpServletRequest request, HttpServletResponse response)`
+
+等方法。而这些实现，最终会调用 `#processRequest(HttpServletRequest request, HttpServletResponse response)` 方法，处理请求。
+
+####  4.1.1. <a name='HTTP_service_'></a>HTTP请求处理的开始—— _#service_
+
+```java
+// FrameworkServlet.java
+
+@Override
+protected void service(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+	// <1> 获得请求方法
+	HttpMethod httpMethod = HttpMethod.resolve(request.getMethod());
+	// <2.1> 处理 PATCH 请求，因为HttpServlet并没有定义关于PATCH的操作，这是一个个例，需要特殊处理
+	if (httpMethod == HttpMethod.PATCH || httpMethod == null) {
+		processRequest(request, response);
+	// <2.2> 调用父类，处理其它请求，FrameworkServlet的父类是HttpServletBean
+    //然后继续调用HttpServlet，即HttpServletBean的父类方法service
+	} else {
+		super.service(request, response);
+	}
+}
+```
+
+在<2>中，调用链会延伸至HttpServlet#service来完成
+
+```java
+// HttpServlet.java
+
+protected void service(HttpServletRequest req, HttpServletResponse resp)
+    throws ServletException, IOException {
+    String method = req.getMethod();
+
+    if (method.equals(METHOD_GET)) {
+        long lastModified = getLastModified(req);
+        if (lastModified == -1) {
+            // servlet doesn't support if-modified-since, no reason
+            // to go through further expensive logic
+            doGet(req, resp);
+        } else {
+            long ifModifiedSince = req.getDateHeader(HEADER_IFMODSINCE);
+            if (ifModifiedSince < lastModified) {
+                // If the servlet mod time is later, call doGet()
+                // Round down to the nearest second for a proper compare
+                // A ifModifiedSince of -1 will always be less
+                maybeSetLastModified(resp, lastModified);
+                doGet(req, resp);
+            } else {
+                resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+            }
+        }
+    } else if (method.equals(METHOD_HEAD)) {
+        long lastModified = getLastModified(req);
+        maybeSetLastModified(resp, lastModified);
+        doHead(req, resp);
+    } else if (method.equals(METHOD_POST)) {
+        doPost(req, resp);
+    } else if (method.equals(METHOD_PUT)) {
+        doPut(req, resp);
+    } else if (method.equals(METHOD_DELETE)) {
+        doDelete(req, resp);
+    } else if (method.equals(METHOD_OPTIONS)) {
+        doOptions(req,resp);
+    } else if (method.equals(METHOD_TRACE)) {
+        doTrace(req,resp);
+    } else {
+        //
+        // Note that this means NO servlet supports whatever
+        // method was requested, anywhere on this server.
+        //
+
+        String errMsg = lStrings.getString("http.method_not_implemented");
+        Object[] errArgs = new Object[1];
+        errArgs[0] = method;
+        errMsg = MessageFormat.format(errMsg, errArgs);
+        
+        resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, errMsg);
+    }
+}
+```
+
+####  4.1.2. <a name='doGet__doPost__doPut__doDelete_'></a>_#doGet_ & _#doPost_ & _#doPut_ & _#doDelete_
+
+这四个方法，都是直接调用 `#processRequest(HttpServletRequest request, HttpServletResponse response)` 方法，处理请求。代码如下：
+
+```java
+// FrameworkServlet.java
+@Override
+protected final void doGet(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+	processRequest(request, response);
+}
+
+@Override
+protected final void doPost(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+	processRequest(request, response);
+}
+
+@Override
+protected final void doPut(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+	processRequest(request, response);
+}
+
+@Override
+protected final void doDelete(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+	processRequest(request, response);
+}
+```
+
+####  4.1.3. <a name='doOptions__doTrace_'></a>_#doOptions_ & _#doTrace_ (不常用)
+
+OPTIONS 请求方法，实际场景下用的少。
+
+####  4.1.4. <a name='processRequest_'></a>_#processRequest_ —— 处理请求的核心方法
+
+```java
+// FrameworkServlet.java
+
+protected final void processRequest(HttpServletRequest request, HttpServletResponse response)
+		throws ServletException, IOException {
+	// <1> 记录当前时间，用于计算 web 请求的处理时间
+	long startTime = System.currentTimeMillis();
+	// <2> 记录异常
+	Throwable failureCause = null;
+
+	// <3> 
+	LocaleContext previousLocaleContext = LocaleContextHolder.getLocaleContext();
+	LocaleContext localeContext = buildLocaleContext(request);
+
+	// <4>
+	RequestAttributes previousAttributes = RequestContextHolder.getRequestAttributes();
+	ServletRequestAttributes requestAttributes = buildRequestAttributes(request, response, previousAttributes);
+
+	// <5>
+	WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+	asyncManager.registerCallableInterceptor(FrameworkServlet.class.getName(), new RequestBindingInterceptor());
+
+	// <6> 
+	initContextHolders(request, localeContext, requestAttributes);
+
+	try {
+		// <7> 执行真正的逻辑!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // 事实上由子类DispatcherServlet来完成
+		doService(request, response);
+	} catch (ServletException | IOException ex) {
+		failureCause = ex; // <8>
+		throw ex;
+	} catch (Throwable ex) {
+		failureCause = ex; // <8>
+		throw new NestedServletException("Request processing failed", ex);
+	} finally {
+		// <9> 
+		resetContextHolders(request, previousLocaleContext, previousAttributes);
+		// <10> 
+		if (requestAttributes != null) {
+			requestAttributes.requestCompleted();
+		}
+		// <11> 打印请求日志，并且日志级别为 DEBUG 
+		logResult(request, response, failureCause, asyncManager);
+		// <12> 发布 ServletRequestHandledEvent 事件，可用于容器的监听
+		publishRequestHandledEvent(request, response, startTime, failureCause);
+	}
+}
+```
+
+###  4.2. <a name='DispatcherServlet__doService_'></a>_DispatcherServlet_ 核心处理方法 _#doService_
+
+上面FrameworkServlet#processRequest中的#doService只是一个空实现方法，具体的逻辑操作需要DispatcherServlet#doService来实现，下面看看源码:
+
+```java
+// DispatcherServlet.java
+@Override
+protected void doService(HttpServletRequest request, HttpServletResponse response) throws Exception {
+	// <1> 打印请求日志，并且日志级别为 DEBUG
+    logRequest(request);
+
+	// <2> 请求属性的处理
+	Map<String, Object> attributesSnapshot = null;
+	if (WebUtils.isIncludeRequest(request)) {
+		attributesSnapshot = new HashMap<>();
+		Enumeration<?> attrNames = request.getAttributeNames();
+		while (attrNames.hasMoreElements()) {
+			String attrName = (String) attrNames.nextElement();
+			if (this.cleanupAfterInclude || attrName.startsWith(DEFAULT_STRATEGIES_PREFIX)) {
+				attributesSnapshot.put(attrName, request.getAttribute(attrName));
+			}
+		}
+	}
+
+	// <3> 设置 Spring 框架中的常用对象到 request 属性中
+	request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, getWebApplicationContext());
+	request.setAttribute(LOCALE_RESOLVER_ATTRIBUTE, this.localeResolver);
+	request.setAttribute(THEME_RESOLVER_ATTRIBUTE, this.themeResolver);
+	request.setAttribute(THEME_SOURCE_ATTRIBUTE, getThemeSource());
+
+	// <4> 
+	if (this.flashMapManager != null) {
+		FlashMap inputFlashMap = this.flashMapManager.retrieveAndUpdate(request, response);
+		if (inputFlashMap != null) {
+			request.setAttribute(INPUT_FLASH_MAP_ATTRIBUTE, Collections.unmodifiableMap(inputFlashMap));
+		}
+		request.setAttribute(OUTPUT_FLASH_MAP_ATTRIBUTE, new FlashMap());
+		request.setAttribute(FLASH_MAP_MANAGER_ATTRIBUTE, this.flashMapManager);
+	}
+
+	try {
+		// <5> 执行请求的分发，重要！！！！！！！！！
+		doDispatch(request, response);
+	} finally {
+		// <6> 
+		if (!WebAsyncUtils.getAsyncManager(request).isConcurrentHandlingStarted()) {
+			// Restore the original attribute snapshot, in case of an include.
+			if (attributesSnapshot != null) {
+				restoreAttributesAfterInclude(request, attributesSnapshot);
+			}
+		}
+	}
+}
+```
+
+###  4.3. <a name='doDispatch_'></a>_#doDispatch_ 请求属性处理完毕，执行请求分发
+
+```java
+// DispatcherServlet.java
+protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+	HttpServletRequest processedRequest = request;
+	HandlerExecutionChain mappedHandler = null;
+	boolean multipartRequestParsed = false;
+	WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+
+	try {
+		ModelAndView mv = null;
+		Exception dispatchException = null;
+
+		try {
+			processedRequest = checkMultipart(request);
+			multipartRequestParsed = (processedRequest != request);
+
+			// Determine handler for the current request.
+			// <3> 获得请求对应的 HandlerExecutionChain 对象
+			mappedHandler = getHandler(processedRequest);
+			if (mappedHandler == null) { // <3.1> 如果获取不到，则根据配置抛出异常或返回 404 错误
+				noHandlerFound(processedRequest, response);
+				return;
+			}
+
+			// Determine handler adapter for the current request.
+			// <4> 获得当前 handler 对应的 HandlerAdapter 对象
+			HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
+
+			// Process last-modified header, if supported by the handler.
+			String method = request.getMethod();
+			boolean isGet = "GET".equals(method);
+			if (isGet || "HEAD".equals(method)) {
+				long lastModified = ha.getLastModified(request, mappedHandler.getHandler());
+				if (new ServletWebRequest(request, response).checkNotModified(lastModified) && isGet) {
+					return;
+				}
+			}
+
+			// <5> 前置处理 拦截器
+			if (!mappedHandler.applyPreHandle(processedRequest, response)) {
+				return;
+			}
+
+			// Actually invoke the handler.
+			// <6> 真正的调用 handler 方法，并返回视图
+			mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
+
+			// <7>
+			if (asyncManager.isConcurrentHandlingStarted()) {
+				return;
+			}
+
+			// <8> 视图
+			applyDefaultViewName(processedRequest, mv);
+			// <9> 后置处理 拦截器
+			mappedHandler.applyPostHandle(processedRequest, response, mv);
+		} catch (Exception ex) {
+			dispatchException = ex; // <10> 记录异常
+		} catch (Throwable err) {
+			// As of 4.3, we're processing Errors thrown from handler methods as well,
+			// making them available for @ExceptionHandler methods and other scenarios.
+			dispatchException = new NestedServletException("Handler dispatch failed", err); // <10> 记录异常
+		}
+
+		// <11> 处理正常和异常的请求调用结果。
+		processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
+	} catch (Exception ex) {
+		// <12> 已完成 拦截器
+		triggerAfterCompletion(processedRequest, response, mappedHandler, ex);
+	} catch (Throwable err) {
+		// <12> 已完成 拦截器
+		triggerAfterCompletion(processedRequest, response, mappedHandler,
+				new NestedServletException("Handler processing failed", err));
+	} finally {
+		// <13.1> 
+		if (asyncManager.isConcurrentHandlingStarted()) {
+			// Instead of postHandle and afterCompletion
+			if (mappedHandler != null) {
+				mappedHandler.applyAfterConcurrentHandlingStarted(processedRequest, response);
+			}
+		} else {
+			// <13.2> Clean up any resources used by a multipart request.
+			if (multipartRequestParsed) {
+				cleanupMultipart(processedRequest);
+			}
+		}
+	}
+}
+```
+
+###  4.4. <a name='processDispatchResult_'></a>_processDispatchResult_ ——转发后处理
+
+该方法是doDispatch后处理，分为下面的情况:
+
+1. 发生异常：从ModelAndViewDefinitionException中获得ModelAndView对象，或者处理异常，生成ModelAndView对象
+2. 没有发生异常，生成ModelAndView，并由#render方法渲染页面
+
+```java
+// DispatcherServlet.java
+
+private void processDispatchResult(HttpServletRequest request, HttpServletResponse response,
+		@Nullable HandlerExecutionChain mappedHandler, @Nullable ModelAndView mv,
+		@Nullable Exception exception) throws Exception {
+	// <1> 标记，是否是生成的 ModelAndView 对象
+	boolean errorView = false;
+
+	// <2> 如果是否异常的结果
+	if (exception != null) {
+	    // 情况一，从 ModelAndViewDefiningException 中获得 ModelAndView 对象
+		if (exception instanceof ModelAndViewDefiningException) {
+			logger.debug("ModelAndViewDefiningException encountered", exception);
+			mv = ((ModelAndViewDefiningException) exception).getModelAndView();
+		// 情况二，处理异常，生成 ModelAndView 对象
+		} else {
+			Object handler = (mappedHandler != null ? mappedHandler.getHandler() : null);
+			mv = processHandlerException(request, response, handler, exception);
+			// 标记 errorView
+			errorView = (mv != null);
+		}
+	}
+
+	// Did the handler return a view to render?
+	if (mv != null && !mv.wasCleared()) {
+		// <3.1> 渲染页面
+		render(mv, request, response);
+		// <3.2> 清理请求中的错误消息属性
+		if (errorView) {
+			WebUtils.clearErrorRequestAttributes(request);
+		}
+	} else {
+		if (logger.isTraceEnabled()) {
+			logger.trace("No view rendering, null ModelAndView returned.");
+		}
+	}
+
+	// <4> TODO 芋艿
+	if (WebAsyncUtils.getAsyncManager(request).isConcurrentHandlingStarted()) {
+		// Concurrent handling started during a forward
+		return;
+	}
+
+	// <5> 已完成处理 拦截器
+	if (mappedHandler != null) {
+		mappedHandler.triggerAfterCompletion(request, response, null);
+	}
+}
+```
+
+###  4.5. <a name='render_'></a>_#render_ ——页面渲染
+
+`#render(ModelAndView mv, HttpServletRequest request, HttpServletResponse response)` 方法，渲染 ModelAndView 。代码如下：
+
+```java
+// DispatcherServlet.java
+
+protected void render(ModelAndView mv, HttpServletRequest request, HttpServletResponse response) throws Exception {
+	// Determine locale for request and apply it to the response.
+	// <1> TODO 芋艿 从 request 中获得 Locale 对象，并设置到 response 中
+	Locale locale = (this.localeResolver != null ? this.localeResolver.resolveLocale(request) : request.getLocale());
+	response.setLocale(locale);
+
+	// 获得 View 对象
+	View view;
+	String viewName = mv.getViewName();
+	// 情况一，使用 viewName 获得 View 对象
+	if (viewName != null) {
+		// We need to resolve the view name.
+		// <2.1> 使用 viewName 获得 View 对象
+		view = resolveViewName(viewName, mv.getModelInternal(), locale, request);
+		if (view == null) { // 获取不到，抛出 ServletException 异常
+			throw new ServletException("Could not resolve view with name '" + mv.getViewName() +
+					"' in servlet with name '" + getServletName() + "'");
+		}
+	// 情况二，直接使用 ModelAndView 对象的 View 对象
+	} else {
+		// No need to lookup: the ModelAndView object contains the actual View object.
+		// 直接使用 ModelAndView 对象的 View 对象
+		view = mv.getView();
+		if (view == null) { // 获取不到，抛出 ServletException 异常
+			throw new ServletException("ModelAndView [" + mv + "] neither contains a view name nor a " +
+					"View object in servlet with name '" + getServletName() + "'");
+		}
+	}
+
+	// Delegate to the View object for rendering.
+	// 打印日志
+	if (logger.isTraceEnabled()) {
+		logger.trace("Rendering view [" + view + "] ");
+	}
+	try {
+		// <3> 设置响应的状态码
+		if (mv.getStatus() != null) {
+			response.setStatus(mv.getStatus().value());
+		}
+		// <4> 渲染页面
+		view.render(mv.getModelInternal(), request, response);
+	} catch (Exception ex) {
+		if (logger.isDebugEnabled()) {
+			logger.debug("Error rendering view [" + view + "]", ex);
+		}
+		throw ex;
+	}
+}
+```
+
+## 总结
+
+### Spring MVC运行流程图
+
+<div align=center><img src="/asset/mvc1.png"/></div>
+
+### Spring MVC代码时序图
+
+<div align=center><img src="/asset/mvc2.png"></div>
+
+### Spring MVC流程示意图
+
+<div align=center><img src="/asset/mvc3.png"></div>
