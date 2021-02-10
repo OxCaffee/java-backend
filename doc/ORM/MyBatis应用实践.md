@@ -1,6 +1,22 @@
 # MyBatis应用实践
 
-## MyBatis环境搭建及入门案例
+<!-- vscode-markdown-toc -->
+* 1. [MyBatis环境搭建及入门案例](#MyBatis)
+* 2. [MyBatis事务配置](#MyBatis-1)
+* 3. [MyBatis ORM问题](#MyBatisORM)
+	* 3.1. [MyBatis标签](#MyBatis-1)
+* 4. [MyBatis多表查询](#MyBatis-1)
+	* 4.1. [一对一: 一个老师一个职位](#:)
+	* 4.2. [一对多: 一个职位对多个老师](#:-1)
+	* 4.3. [一对多对多: 职位是教授的所有老师的学生](#:-1)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
+##  1. <a name='MyBatis'></a>MyBatis环境搭建及入门案例
 
 * pom.xml
 
@@ -113,7 +129,7 @@ public interface UserMapperAnnotation {
 }
 ```
 
-## MyBatis事务配置
+##  2. <a name='MyBatis-1'></a>MyBatis事务配置
 
 MyBatis是通过SqlSession的`commit()`和`rollback()`方法
 
@@ -123,7 +139,7 @@ MyBatis是通过SqlSession的`commit()`和`rollback()`方法
 Session sqlSession = factory.openSession(true);
 ```
 
-## MyBatis ORM问题
+##  3. <a name='MyBatisORM'></a>MyBatis ORM问题
 
 场景: 表的列名和需要封装的实体类的属性名称不一致
 
@@ -155,7 +171,7 @@ public class ModifiedUser implements Serializable {
 </resultMap>
 ```
 
-### MyBatis标签
+###  3.1. <a name='MyBatis-1'></a>MyBatis标签
 
 * `if`标签
 
@@ -220,7 +236,7 @@ public class QueryRange implements Serializable {
 }
 ```
 
-## MyBatis多表查询
+##  4. <a name='MyBatis-1'></a>MyBatis多表查询
 
 * 创建tb_teacher表:
 
@@ -300,7 +316,7 @@ public class Student implements Serializable {
 
 * **关系表不用实体类表示出来**
 
-### 一对一: 一个老师一个职位
+###  4.1. <a name=':'></a>一对一: 一个老师一个职位
 
 * TeacherMapper.xml
 
@@ -351,7 +367,7 @@ public interface TeacherMapper {
 }
 ```
 
-### 一对多: 一个职位对多个老师
+###  4.2. <a name=':-1'></a>一对多: 一个职位对多个老师
 
 * PositionMapper.xml
 
@@ -451,7 +467,7 @@ public interface PositionMapper {
 }
 ```
 
-### 一对多对多: 职位是教授的所有老师的学生
+###  4.3. <a name=':-1'></a>一对多对多: 职位是教授的所有老师的学生
 
 * PositionMapper.xml
 
