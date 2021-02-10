@@ -15,7 +15,7 @@ public interface ViewResolver{
 
 ## _ViewResolver_ 族谱
 
-<div align=center><img src="/asset/vr1.png"></div>
+<div align=center><img src="/assets/vr1.png"></div>
 
 虽然实现类比较多，ViewResolver基本可以分为五个实现类，就是ViewResolver的五个直接实现类
 

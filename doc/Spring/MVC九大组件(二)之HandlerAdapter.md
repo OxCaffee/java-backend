@@ -51,7 +51,7 @@ public interface HandlerAdapter {
 
 ##  2. <a name='HandlerAdapter_'></a>_HandlerAdapter_ 族谱关系
 
-<div align=center><img src="/asset/hd1.png"/></div>
+<div align=center><img src="/assets/hd1.png"/></div>
 
 - 左边的 AbstractHandlerMethodAdapter 和 RequestMappingHandlerAdapter 相对复杂
 - 右边的 SimpleServletHandlerAdapter、HttpRequestHandlerAdapter、SimpleControllerHandlerAdapter 相对简单

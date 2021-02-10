@@ -56,13 +56,13 @@ Spring MVC框架是请求驱动的：所有设计都围绕着一个中央Servlet
 
 下图展示了Spring Web MVC的DispatcherServlet处理请求的工作流，DispatcherServlet应用的其实就是一个“前端控制器”的设计模式：
 
-<div align=center><img src="/asset/dispatcher2.png"/></div>
+<div align=center><img src="/assets/dispatcher2.png"/></div>
 
 基于Spring Boot可以直接使用Spring MVC，除非有非常个性化的要求，相关配置不需要手动配置。
 
 ##  3. <a name='DispatcherServlet_-1'></a>_DispatcherServlet_ 族谱
 
-<div align=center><img src="/asset/dispatcher1.png" width=100%/></div>
+<div align=center><img src="/assets/dispatcher1.png" width=100%/></div>
 
 * **HttpServletBean** : 负责将ServletConfig设置到当前Servlet对象中，即初始化web.xml中init-param参数
 * **FrameworkServlet** : 负责初始化Spring Servlet WebApplicationContext容器
@@ -754,12 +754,12 @@ protected void render(ModelAndView mv, HttpServletRequest request, HttpServletRe
 
 ### Spring MVC运行流程图
 
-<div align=center><img src="/asset/mvc1.png"/></div>
+<div align=center><img src="/assets/mvc1.png"/></div>
 
 ### Spring MVC代码时序图
 
-<div align=center><img src="/asset/mvc2.png"></div>
+<div align=center><img src="/assets/mvc2.png"></div>
 
 ### Spring MVC流程示意图
 
-<div align=center><img src="/asset/mvc3.png"></div>
+<div align=center><img src="/assets/mvc3.png"></div>

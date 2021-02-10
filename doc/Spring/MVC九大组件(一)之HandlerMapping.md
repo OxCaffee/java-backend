@@ -1,7 +1,7 @@
 # Spring MVC九大组件(一)之HandlerMapping
 
 <!-- vscode-markdown-toc -->
-* 1. [处理器顶级接口 _HandlerMapping_](#_HandlerMapping_)
+* 1. <div align=center><img src="/assets/vr1.png"></div>
 * 2. [_HandlerMapping_ 族谱](#HandlerMapping_)
 * 3. [_AbstractHandlerMapping_](#AbstractHandlerMapping_)
 	* 3.1. [_#initApplicationContext_](#initApplicationContext_)
@@ -60,7 +60,7 @@ public interface HandlerMapping {
 
 ##  2. <a name='HandlerMapping_'></a>_HandlerMapping_ 族谱
 
-<div align=center><img src="/asset/zj1.png"/></div>
+<div align=center><img src="/assets/zj1.png"/></div>
 
 - 绿框 **AbstractHandlerMapping** 抽象类，实现了【获得请求对应的处理器和拦截器们】的骨架逻辑，而暴露 `#getHandlerInternal(HttpServletRequest request)` 抽象方法，交由子类实现。这就是我们常说的[“模板方法模式”](http://www.iocoder.cn/DesignPattern/xiaomingge/Template-Method/) 。
 - AbstractHandlerMapping 的子类，分成两派，分别是：
