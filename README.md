@@ -24,6 +24,8 @@
   * [Spring源码解析——IoC之Bean的加载](/doc/Spring/IoC之Bean的加载.md)
   * [Spring源码解析——IoC之Bean的创建](/doc/Spring/IoC之Bean的创建.md)
   * [Spring源码解析——IoC之Bean的生命周期](/doc/Spring/IoC之Bean的生命周期.md)
+  * [SpringBoot源码解析——@SpringBootApplication和SpringApplication.md](/doc/Spring/@SpringBootApplication和SpringApplication.md)
+  * [SpringBoot源码解析——@ConfigurationProperties](/doc/Spring/@ConfigurationProperties.md)
 
 ##  2. <a name='-1'></a>实战篇
 
