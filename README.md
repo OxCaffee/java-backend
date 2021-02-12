@@ -44,6 +44,7 @@
   * [Spring Boot面试题](/doc/Spring/SpringBoot面试题.md)
   * [Spring MVC面试题](/doc/Spring/SpringMVC面试题.md)
   * [MyBatis面试题](/doc/ORM/MyBatis面试题总结.md)
+  * [RabbitMQ面试题](/doc/消息队列/RabbitMQ面试题.md)
 
 ##  4. <a name='-1'></a>开源项目篇
 
