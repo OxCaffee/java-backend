@@ -5,14 +5,14 @@
 	* 1.1. [什么是SPI](#SPI)
 	* 1.2. [Dubbo SPI使用示例](#DubboSPI)
 * 2. [获取拓展配置](#-1)
-	* 2.1. [获取扩展配置类:  _#getExtensionClasses_](#:_getExtensionClasses_)
-	* 2.2. [加载获取的扩展配置类: _#loadExtensionClasses_](#:_loadExtensionClasses_)
-	* 2.3. [从文件中加载: _#loadDirectory_](#:_loadDirectory_)
-* 3. [获得扩展加载器 _ExtensionLoader_](#_ExtensionLoader_)
+	* 2.1. [获取扩展配置类:_#getExtensionClasses_](#:_getExtensionClasses_)
+	* 2.2. [加载获取的扩展配置类:_#loadExtensionClasses_](#:_loadExtensionClasses_)
+	* 2.3. [从文件中加载:_#loadDirectory_](#:_loadDirectory_)
+* 3. [获得扩展加载器:_ExtensionLoader_](#:_ExtensionLoader_)
 * 4. [获得指定的扩展对象](#-1)
-	* 4.1. [按名获取扩展: _#getExtension_](#:_getExtension_)
-	* 4.2. [创建扩展: _#createExtension_](#:_createExtension_)
-	* 4.3. [反射setter注入扩展: _#injectExtension_](#setter:_injectExtension_)
+	* 4.1. [按名获取扩展:_#getExtension_](#:_getExtension_)
+	* 4.2. [创建扩展:_#createExtension_](#:_createExtension_)
+	* 4.3. [反射setter注入扩展:#injectExtension_](#setter:injectExtension_)
 * 5. [获得自适应的拓展对象](#-1)
 	* 5.1. [_#getAdaptiveExtension_](#getAdaptiveExtension_)
 	* 5.2. [_#createAdaptiveExtension_](#createAdaptiveExtension_)
@@ -35,7 +35,7 @@ SPI 全称为 Service Provider Interface，是一种服务发现机制。SPI 的
 
 ##  2. <a name='-1'></a>获取拓展配置
 
-###  2.1. <a name=':_getExtensionClasses_'></a>获取扩展配置类:  _#getExtensionClasses_
+###  2.1. <a name=':_getExtensionClasses_'></a>获取扩展配置类:_#getExtensionClasses_
 
 _#getExtensionClasses_ 用来获取**SPI扩展实现类数组**
 
@@ -45,11 +45,11 @@ _#getExtensionClasses_ 用来获取**SPI扩展实现类数组**
 * **自适应扩展实现类** ：那些扩展`Adaptive`的实现类，会添加到`cachedAdaptiveClasses`属性中
 * **带唯一参数为扩展接口的构造方法的实现类，或者是扩展Wrapper的实现类** :会添加到`cachedWrapperClasses`属性中
 
-###  2.2. <a name=':_loadExtensionClasses_'></a>加载获取的扩展配置类: _#loadExtensionClasses_
+###  2.2. <a name=':_loadExtensionClasses_'></a>加载获取的扩展配置类:_#loadExtensionClasses_
 
 <div align=center><img src="/assets/dubbo-spi-02.png"/></div>
 
-###  2.3. <a name=':_loadDirectory_'></a>从文件中加载: _#loadDirectory_
+###  2.3. <a name=':_loadDirectory_'></a>从文件中加载:_#loadDirectory_
 
 <div align=center><img src="/assets/dubbo-spi-03.png"/></div>
 
@@ -62,17 +62,17 @@ _#getExtensionClasses_ 用来获取**SPI扩展实现类数组**
 6. 判断扩展实现类，需要实现扩展接口
 7. 添加各组件到缓存中，例如`cachedExtensionClasses`
 
-##  3. <a name='_ExtensionLoader_'></a>获得扩展加载器 _ExtensionLoader_
+##  3. <a name=':_ExtensionLoader_'></a>获得扩展加载器:_ExtensionLoader_
 
 <div align=center><img src="/assets/dubbo-spi-05.png"/></div>
 
 ##  4. <a name='-1'></a>获得指定的扩展对象
 
-###  4.1. <a name=':_getExtension_'></a>按名获取扩展: _#getExtension_
+###  4.1. <a name=':_getExtension_'></a>按名获取扩展:_#getExtension_
 
 <div align=center><img src="/assets/dubbo-spi-06.png"/></div>
 
-###  4.2. <a name=':_createExtension_'></a>创建扩展: _#createExtension_
+###  4.2. <a name=':_createExtension_'></a>创建扩展:_#createExtension_
 
 <div align=center><img src="/assets/dubbo-spi-07.png"/></div>
 
@@ -82,7 +82,7 @@ Wrapper 类同样实现了扩展点接口，但是 Wrapper 不是扩展点的真
 
 通过 Wrapper 类可以把所有扩展点公共逻辑移至 Wrapper 中。新加的 Wrapper 在所有的扩展点上添加了逻辑，有些类似 AOP，即 Wrapper 代理了扩展点。
 
-###  4.3. <a name='setter:_injectExtension_'></a>反射setter注入扩展: _#injectExtension_
+###  4.3. <a name='setter:injectExtension_'></a>反射setter注入扩展:#injectExtension_
 
 这个方法是用来实现依赖注入的，如果被加载的实例中，有成员属性本身也是一个扩展点，则会通过 `setter` 方法进行注入。
 
