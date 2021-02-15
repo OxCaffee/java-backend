@@ -28,7 +28,7 @@
   * [SpringBoot源码解析——@ConfigurationProperties](/doc/Spring/@ConfigurationProperties.md)
 
 * **:apple:Dubbo**
-  * [Dubbo源码解析——SPI机制](/doc/RPC/SPI机制.md)
+  * [Dubbo源码解析——SPI机制](/doc/RPC/SPI扩展机制)
   * Dubbo源码解析——服务暴露
   * Dubbo源码解析——服务导出
 
