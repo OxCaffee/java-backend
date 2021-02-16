@@ -35,6 +35,7 @@
   * [Netty源码解析准备篇——异步回调模式](/doc/Netty/异步回调模式.md)
   * [Netty源码解析准备篇——Netty基础知识](/doc/Netty/Netty基础知识.md)
   * [Netty源码解析正式篇——缓冲区Buffer](/doc/Netty/Buffer.md)
+  * [Netty源码解析正式篇——选择器Selector](/doc/Netty/Selector.md)
 
 
 ##  2. <a name='-1'></a>实战篇
