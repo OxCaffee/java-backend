@@ -36,6 +36,7 @@
   * [Netty源码解析准备篇——Netty基础知识](/doc/Netty/Netty基础知识.md)
   * [Netty源码解析正式篇——缓冲区Buffer](/doc/Netty/Buffer.md)
   * [Netty源码解析正式篇——选择器Selector](/doc/Netty/Selector.md)
+  * [Netty源码解析正式篇——EventLoopGroup](/doc/Netty/EventLoopGroup.md)
 
 
 ##  2. <a name='-1'></a>实战篇
