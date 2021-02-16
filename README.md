@@ -32,7 +32,9 @@
   * Dubbo源码解析——服务导出
 * **:hammer_and_wrench:Netty**
   * [Netty源码解析准备篇——Reactor模式](/doc/Netty/Reactor模式.md)
+  * [Netty源码解析准备篇——异步回调模式](/doc/Netty/异步回调模式.md)
   * [Netty源码解析准备篇——Netty基础知识](/doc/Netty/Netty基础知识.md)
+  * [Netty源码解析正式篇——缓冲区Buffer](/doc/Netty/Buffer.md)
 
 
 ##  2. <a name='-1'></a>实战篇
