@@ -9,12 +9,18 @@
 	* 3.3. [_#execute_](#execute_)
 	* 3.4. [_#invokeAll_](#invokeAll_)
 * 4. [_MultithreadEventExecutorGroup_](#MultithreadEventExecutorGroup_)
+	* 4.1. [Constructor](#Constructor)
+* 5. [_NioEventLoopGroup_](#NioEventLoopGroup_)
+	* 5.1. [Constructor](#Constructor-1)
+	* 5.2. [_#newChild_](#newChild_)
+	* 5.3. [_#setIoRatio_](#setIoRatio_)
+	* 5.4. [_#rebuildSelectors_](#rebuildSelectors_)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
 	autoSave=true
 	/vscode-markdown-toc-config -->
-<!-- /vscode-markdown-toc -->、
+<!-- /vscode-markdown-toc -->
 
 ##  1. <a name=''></a>前言
 
@@ -63,30 +69,30 @@
 
 `io.netty.util.concurrent.MultithreadEventExecutorGroup` ，继承 `AbstractEventExecutorGroup` 抽象类，基于多线程的 EventExecutor ( 事件执行器 )的分组抽象类。
 
-### Constructor
+###  4.1. <a name='Constructor'></a>Constructor
 
 <div align=center><img src="/assets/netty24.png"/></div>
 
-## _NioEventLoopGroup_
+##  5. <a name='NioEventLoopGroup_'></a>_NioEventLoopGroup_
 
 `io.netty.channel.nio.NioEventLoopGroup` ，继承 `MultithreadEventLoopGroup` 抽象类，`NioEventLoop` 的分组实现类。
 
-### Constructor
+###  5.1. <a name='Constructor-1'></a>Constructor
 
 构造方法比较多，**主要是明确了父构造方法的 Object ... args 方法参数:**
 * 第一个参数，`selectorProvider` ， `java.nio.channels.spi.SelectorProvider`  ，用于创建 Java NIO Selector 对象。
 * 第二个参数，`selectStrategyFactory` ， `io.netty.channel.SelectStrategyFactory` ，选择策略工厂。详细解析，见后续文章。
 * 第三个参数，`rejectedExecutionHandler` ， `io.netty.channel.SelectStrategyFactory` ，拒绝执行处理器。详细解析，见后续文章。
 
-### _#newChild_
+###  5.2. <a name='newChild_'></a>_#newChild_
 
 <div align=center><img src="/assets/netty25.png"/></div>
 
-### _#setIoRatio_
+###  5.3. <a name='setIoRatio_'></a>_#setIoRatio_
 
 <div align=center><img src="/assets/netty26.png"/></div>
 
-### _#rebuildSelectors_
+###  5.4. <a name='rebuildSelectors_'></a>_#rebuildSelectors_
 
 因为 JDK 有 epoll 100% CPU Bug 。实际上，NioEventLoop 当触发该 Bug 时，也会自动调用 `NioEventLoop#rebuildSelector()` 方法，进行重建 Selector 对象，以修复该问题。
 
