@@ -39,6 +39,11 @@
   * [Netty源码解析正式篇——EventLoopGroup](/doc/Netty/EventLoopGroup.md)
   * [Netty源码解析正式篇——EventLoop](/doc/Netty/EventLoop.md)
   * Netty源码解析正式篇——Promise
+  * Netty源码解析正式篇——ChannelPipeline和ChannelHandler
+  * Netty源码解析正式篇——Channel
+  * Netty源码解析正式篇——ByteBuf和Jemalloc
+  * Netty源码解析正式篇——Codec专题
+  * Netty源码解析正式篇——Util专题
 
 
 ##  2. <a name='-1'></a>实战篇

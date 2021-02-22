@@ -26,6 +26,9 @@
 	* 7.2. [_#fetchFromScheduledTaskQueue_](#fetchFromScheduledTaskQueue_)
 	* 7.3. [_#reject_](#reject_)
 	* 7.4. [_#execute_](#execute_)
+* 8. [处理IO事件](#IO)
+	* 8.1. [_SelectorTuple_](#SelectorTuple_)
+		* 8.1.1. [_#openSelector_](#openSelector_)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
@@ -650,4 +653,140 @@ void rejected(Runnable task, SingleThreadEventExecutor executor);
         }
     }
 ```
+
+##  8. <a name='IO'></a>处理IO事件
+
+###  8.1. <a name='SelectorTuple_'></a>_SelectorTuple_
+
+SelectorTuple内嵌在NioEventLoop中，源码如下:
+
+```java
+private static final class SelectorTuple {
+    final Selector unwrappedSelector;
+    final Selector selector;
+
+    SelectorTuple(Selector unwrappedSelector) {
+        this.unwrappedSelector = unwrappedSelector;
+        this.selector = unwrappedSelector;
+    }
+
+    SelectorTuple(Selector unwrappedSelector, Selector selector) {
+        this.unwrappedSelector = unwrappedSelector;
+        this.selector = selector;
+    }
+}
+```
+
+其中`unwrappedSelector`是未包装的Selector对象,`selector`是包装后的Selector对象
+
+####  8.1.1. <a name='openSelector_'></a>_#openSelector_
+
+#openSelector()负责创建Selector对象
+
+```java
+    private SelectorTuple openSelector() {
+        final Selector unwrappedSelector;
+        try {
+            unwrappedSelector = provider.openSelector();
+        } catch (IOException e) {
+            throw new ChannelException("failed to open a new selector", e);
+        }
+        //如果不支持KEY SET优化，直接返回未包装的Selector组成的SelectorTuple
+        if (DISABLE_KEY_SET_OPTIMIZATION) {
+            return new SelectorTuple(unwrappedSelector);
+        }
+
+        Object maybeSelectorImplClass = AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            @Override
+            public Object run() {
+                try {
+                    return Class.forName(
+                            "sun.nio.ch.SelectorImpl",
+                            false,
+                            PlatformDependent.getSystemClassLoader());
+                } catch (Throwable cause) {
+                    return cause;
+                }
+            }
+        });
+
+        if (!(maybeSelectorImplClass instanceof Class) ||
+            // ensure the current selector implementation is what we can instrument.
+            !((Class<?>) maybeSelectorImplClass).isAssignableFrom(unwrappedSelector.getClass())) {
+            if (maybeSelectorImplClass instanceof Throwable) {
+                Throwable t = (Throwable) maybeSelectorImplClass;
+                logger.trace("failed to instrument a special java.util.Set into: {}", unwrappedSelector, t);
+            }
+            return new SelectorTuple(unwrappedSelector);
+        }
+
+        final Class<?> selectorImplClass = (Class<?>) maybeSelectorImplClass;
+        final SelectedSelectionKeySet selectedKeySet = new SelectedSelectionKeySet();
+
+        Object maybeException = AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            @Override
+            public Object run() {
+                try {
+                    Field selectedKeysField = selectorImplClass.getDeclaredField("selectedKeys");
+                    Field publicSelectedKeysField = selectorImplClass.getDeclaredField("publicSelectedKeys");
+
+                    if (PlatformDependent.javaVersion() >= 9 && PlatformDependent.hasUnsafe()) {
+                        // Let us try to use sun.misc.Unsafe to replace the SelectionKeySet.
+                        // This allows us to also do this in Java9+ without any extra flags.
+                        long selectedKeysFieldOffset = PlatformDependent.objectFieldOffset(selectedKeysField);
+                        long publicSelectedKeysFieldOffset =
+                                PlatformDependent.objectFieldOffset(publicSelectedKeysField);
+
+                        if (selectedKeysFieldOffset != -1 && publicSelectedKeysFieldOffset != -1) {
+                            PlatformDependent.putObject(
+                                    unwrappedSelector, selectedKeysFieldOffset, selectedKeySet);
+                            PlatformDependent.putObject(
+                                    unwrappedSelector, publicSelectedKeysFieldOffset, selectedKeySet);
+                            return null;
+                        }
+                        // We could not retrieve the offset, lets try reflection as last-resort.
+                    }
+
+                    Throwable cause = ReflectionUtil.trySetAccessible(selectedKeysField, true);
+                    if (cause != null) {
+                        return cause;
+                    }
+                    cause = ReflectionUtil.trySetAccessible(publicSelectedKeysField, true);
+                    if (cause != null) {
+                        return cause;
+                    }
+
+                    selectedKeysField.set(unwrappedSelector, selectedKeySet);
+                    publicSelectedKeysField.set(unwrappedSelector, selectedKeySet);
+                    return null;
+                } catch (NoSuchFieldException e) {
+                    return e;
+                } catch (IllegalAccessException e) {
+                    return e;
+                }
+            }
+        });
+
+        if (maybeException instanceof Exception) {
+            selectedKeys = null;
+            Exception e = (Exception) maybeException;
+            logger.trace("failed to instrument a special java.util.Set into: {}", unwrappedSelector, e);
+            return new SelectorTuple(unwrappedSelector);
+        }
+        selectedKeys = selectedKeySet;
+        logger.trace("instrumented a special java.util.Set into: {}", unwrappedSelector);
+        return new SelectorTuple(unwrappedSelector,
+                                 new SelectedSelectionKeySetSelector(unwrappedSelector, selectedKeySet));
+    }
+```
+
+通过分析源码我们可以看到上述源码主要完成了下面的操作:
+
+1. 创建一个Selector对象，作为unwrappedSelector
+2. 如果禁用Selector的优化，那么直接返回SelectorTuple对象，那么这种情况下，SelectorTuple中的Selector和unwrappedSelector均是未优化的unwrappedSelector
+3. 尝试获得SelectorImpl对象，采用类加载的方式，如果加载成功，则返回该对象，如果加载不成功，返回异常
+4. 创建SelectedSelectionKeySet对象，这是Netty对Selector的selectionKeys的优化
+5. 设置SelectedSelectionKeySet对象到Selector中，即完成Selector的属性填充
+6. 创建SelectorTuple对象，即Selector使用SelectedSelectionKeySetSelector对象
+7. 至此，创建Selector工作完成
 
