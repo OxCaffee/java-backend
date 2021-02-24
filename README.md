@@ -29,7 +29,7 @@
   * [MyBatis源码解析——StatementHandler](/doc/ORM/MyBatis源码解析之StatementHandler.md)
   * [MyBatis源码解析——ResultSetHandler](/doc/ORM/MyBatis源码解析之ResultSetHandler.md)
 * **:leaves:Spring**
-  * [Spring MVC源码解析—— ApplicationContext容器](/doc/Spring/容器的初始化之RootApplicationContext容器.md)
+  * [Spring MVC源码解析——ApplicationContext容器](/doc/Spring/容器的初始化之RootApplicationContext容器.md)
   * [Spring MVC源码解析——核心分发器DispatcherServlet](/doc/Spring/核心分发器DispatcherServlet.md)
   * [Spring MVC源码解析——MVC九大组件之HandlerMapping](/doc/Spring/MVC九大组件(一)之HandlerMapping.md)
   * [Spring MVC源码解析——MVC九大组件之HandlerAdapter](/doc/Spring/MVC九大组件(二)之HandlerAdapter.md)
