@@ -46,7 +46,7 @@ StatementHandler的实现子类大致有4种:
 
 或者从一个SQL语句的执行过程我们可以看到StatementHandler的作用:
 
-<div align=center><img src="/assets/mb5.png"</div>
+<div align=center><img src="/assets/mb5.png"/></div>
 
 下面开始我们的源码探究之旅。
 
