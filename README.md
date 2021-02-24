@@ -7,6 +7,7 @@
     <a href="https://github.com/OxCaffee/Open-Source-Note"><img src="https://img.shields.io/github/repo-size/OxCaffee/Open-Source-Note?icon=github&color=4ab8a1"/></a>
     <a><img src="https://img.shields.io/bitbucket/issues-raw/OxCaffee/Open-Source-Note?icon=github&color=4ab8a1"/></a>
 </div>
+
 ------------------------
 
 <!-- vscode-markdown-toc -->
