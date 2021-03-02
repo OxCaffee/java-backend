@@ -7,7 +7,6 @@
     <a href="https://github.com/OxCaffee/Open-Source-Note"><img src="https://img.shields.io/github/repo-size/OxCaffee/Open-Source-Note?icon=github&color=4ab8a1"/></a>
     <a><img src="https://img.shields.io/bitbucket/issues-raw/OxCaffee/Open-Source-Note?icon=github&color=4ab8a1"/></a>
 </div>
-
 ------------------------
 
 <!-- vscode-markdown-toc -->
@@ -77,11 +76,14 @@
   * [Spring MVC面试题](/doc/Spring/SpringMVC面试题.md)
   * [MyBatis面试题](/doc/ORM/MyBatis面试题总结.md)
   * [RabbitMQ面试题](/doc/消息队列/RabbitMQ面试题.md)
+* **:thought_balloon:思想**
+  * [设计模式汇总](/doc/思想/设计模式汇总.md)
 
 ## 架构篇
 
 * **:earth_americas:Web**
   * [深入理解Servlet](/doc/Web/深入理解Servlet.md)
+
 
 ##  4. <a name='-1'></a>开源项目篇
 
