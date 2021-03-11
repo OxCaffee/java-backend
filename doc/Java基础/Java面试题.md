@@ -22,6 +22,8 @@
 * 19. [String s=new String("xyz")这条语句到底创建了多少个String对象?](#StringsnewStringxyzString)
 * 20. [String和StringBuffer的区别?](#StringStringBuffer)
 * 21. [String s="a"+"b"+"c"+"d"到底创建了多少String对象?](#StringsabcdString)
+* 22. [try和finally里同时有return语句，返回顺序是什么样的?](#tryfinallyreturn)
+* 23. [final,finally,finalize的区别？](#finalfinallyfinalize)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
@@ -200,4 +202,42 @@ System.out.println(s3 == "ab");	//true
 实验结果表明，javac 编译可以对字符 串常量直接相加的表达式进行优化，不必要等到运行期去进行加法运算处理，而是在编译时去掉 其中的加号，直接将其编译成一个这些常量相连的结果。
 
 因此，`String s = "a" + "b" + "c" + "d";` 只会生成一个"abcd"的字符串String对象。
+
+##  22. <a name='tryfinallyreturn'></a>try和finally里同时有return语句，返回顺序是什么样的?
+
+先看下面的代码:
+
+```java
+public class Test{
+    public static void main(String[] args){
+        System.out.println(a());
+    }
+    
+    public int a(){
+        try{
+            System.out.println("!!!!!");
+            return 1;
+        }finally{
+        	System..out.println("?????");
+            return 2;
+        }
+    }
+}
+```
+
+执行结果如下：
+
+```java
+!!!!!
+?????
+2
+```
+
+从上面例子的运行结果中可以发现，try 中的 return 语句调用的函数先于 finally 中调用的函数执行，也就是说 return 语句先执行，finally 语句后执行，所以，返回的结果是 2。Return 并不是让函数马上返回，而是 return 语句执行后， 将把返回结果放置进函数栈中，此时函数并不是马上返回，它要执行 finally 语句后才真正开始 返回。
+
+##  23. <a name='finalfinallyfinalize'></a>final,finally,finalize的区别？
+
+* final 用于声明属性，方法和类，分别表示属性不可变，方法不可覆盖，类不可继承。 内部类要访问局部变量，局部变量必须定义成 final 类型
+* finally 是异常处理语句结构的一部分，表示总是执行
+* finalize 是 Object 类的一个方法，在垃圾收集器执行的时候会调用被回收对象的此方法，可以覆盖此方法提供垃圾收集时的其他资源回收，例如关闭文件等。**JVM不保证此方法总被调用**
 
