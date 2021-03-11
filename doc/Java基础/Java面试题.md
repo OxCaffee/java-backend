@@ -16,6 +16,12 @@
 * 13. [面向对象编程的特点?](#-1)
 * 14. [Java中多态的机制是什么样的?](#Java)
 * 15. [abstract class和interface的区别?](#abstractclassinterface)
+* 16. [abstract class中是否可以使用static?是否可以使用native?是否可以使用synchronized?](#abstractclassstaticnativesynchronized)
+* 17. [String拼接之后,原始的String对象中的内容到底变化了没有?](#StringString)
+* 18. [String是否可以被继承?](#String)
+* 19. [String s=new String("xyz")这条语句到底创建了多少个String对象?](#StringsnewStringxyzString)
+* 20. [String和StringBuffer的区别?](#StringStringBuffer)
+* 21. [String s="a"+"b"+"c"+"d"到底创建了多少String对象?](#StringsabcdString)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
@@ -156,3 +162,42 @@ class Person{
 * 抽象类中的抽象方法的访问类型可以是 public，protected 和（默认类型,虽然 eclipse 下不报错，但应该也不行），但接口中的抽象方法只能是 public 类型的，并且默认即 为 public abstract 类型。 
 
 * 抽象类中可以包含静态方法，接口中不能包含静态方法 6. 抽象类和接口中都可以包含静态成员变量，抽象类中的静态成员变量的访问类型可以任意， 但接口中定义的变量只能是 public static final 类型，并且默认即为 public static final 类型。 7. 一个类可以实现多个接口，但只能继承一个抽象类。
+
+##  16. <a name='abstractclassstaticnativesynchronized'></a>abstract class中是否可以使用static?是否可以使用native?是否可以使用synchronized?
+
+* abstract 的 method 不可以是 static 的，因为抽象的方法是要被子类实现的，而 static 与子类 扯不上关系！
+* native 方法表示该方法要用另外一种依赖平台的编程语言实现的，不存在着被子类实现的问 题，所以，它也不能是抽象的，不能与 abstract 混用。例如，FileOutputSteam 类要硬件打交道， 底层的实现用的是操作系统相关的 api 实现，例如，在 windows 用 c 语言实现的，所以，查看 jdk 的源代码，可以发现 FileOutputStream 的 open 方法的定义如下： `private native void open(String name) throws FileNotFoundException;` 如果我们要用 java 调用别人写的 c 语言函数，我们是无法直接调用的，我们需要按照 java 的要求写一个 c 语言的函数，又我们的这个 c 语言函数去调用别人的 c 语言函数。由于我们的c 语言函数是按 java 的要求来写的，我们这个 c 语言函数就可以与 java 对接上，java 那边的对接 方式就是定义出与我们这个 c 函数相对应的方法，java 中对应的方法不需要写具体的代码，但需 要在前面声明 native。
+* synchronized 应该是作用在一个具体的方法上才有意义。而 且，方法上的 synchronized 同步所使用的同步锁对象是 this，而抽象方法上无法确定 this 是什么。
+
+##  17. <a name='StringString'></a>String拼接之后,原始的String对象中的内容到底变化了没有?
+
+没有。因为 String 被设计成不可变(immutable)类，所以它的所有对象都是不可变对象。在这 段代码中，s 原先指向一个 String 对象，内容是 "Hello"，然后我们对 s 进行了+操作，那么 s 所 指向的那个对象是否发生了改变呢？答案是没有。这时，s 不指向原来那个对象了，而指向了另 一个 String 对象，内容为"Hello world!"，原来那个对象还存在于内存之中，只是 s 这个引用变量 不再指向它了。 通过上面的说明，我们很容易导出另一个结论，如果经常对字符串进行各种各样的修改， 或者说，不可预见的修改，那么使用 String 来代表字符串的话会引起很大的内存开销。因为 String 对象建立之后不能再改变，所以对于每一个不同的字符串，都需要一个 String 对象来表示。这时， 应该考虑使用 StringBuffer 类，它允许修改，而不是每个不同的字符串都要生成一个新的对象。 并且，这两种类的对象转换十分容易。 至于为什么要把 String 类设计成不可变类，是它的用途决定的。其实不只 String，很多 Java 标准类库中的类都是不可变的。在开发一个系统的时候，我们有时候也需要设计不可变类，来传 递一组相关的值，这也是面向对象思想的体现。不可变类有一些优点，比如因为它的对象是只读的， 所以多线程并发访问也不会有任何问题。当然也有一些缺点，比如每个不同的状态都要一个对象来 代 表 ， 可 能 会 造 成 性 能 上 的 问 题 。 所 以 Java 标准类库还提供了一个可变版本，即 StringBuffer。
+
+##  18. <a name='String'></a>String是否可以被继承?
+
+String 类是 final 类故不可以继承。
+
+##  19. <a name='StringsnewStringxyzString'></a>String s=new String("xyz")这条语句到底创建了多少个String对象?
+
+两个或一个，”xyz”对应一个对象，这个对象放在字符串常量缓冲区，常量”xyz”不管出现多少 遍，都是缓冲区中的那一个。New String 每写一遍，就创建一个新的对象，它一句那个常量”xyz” 对象的内容来创建出一个新 String 对象。如果以前就用过’xyz’，这句代表就不会创建”xyz”自己了， 直接从缓冲区拿。
+
+##  20. <a name='StringStringBuffer'></a>String和StringBuffer的区别?
+
+JAVA 平台提供了两个类：String 和 StringBuffer，它们可以储存和操作字符串，即包含多个字 符的字符数据。这个 String 类提供了数值不可改变的字符串。而这个 StringBuffer 类提供的字符串 进行修改。当你知道字符数据要改变的时候你就可以使用 StringBuffer。典型地，你可以使用 StringBuffers 来动态构造字符数据。另外，String 实现了 equals 方法，`new String(“abc”).equals(new String(“abc”)` 的 结 果 为 true, 而 StringBuffer 没 有 实 现 equals 方 法 ， 所 以 `new StringBuffer(“abc”).equals(new StringBuffer(“abc”)`的结果为 false。
+
+##  21. <a name='StringsabcdString'></a>String s="a"+"b"+"c"+"d"到底创建了多少String对象?
+
+对于下面的代码：
+
+```java
+String s1 = "a";
+String s2 = s1 + "b";
+String s3 = "a" + "b";
+System.out.println(s2 == "ab");	//false
+System.out.println(s3 == "ab");	//true
+```
+
+实验结果表明，javac 编译可以对字符 串常量直接相加的表达式进行优化，不必要等到运行期去进行加法运算处理，而是在编译时去掉 其中的加号，直接将其编译成一个这些常量相连的结果。
+
+因此，`String s = "a" + "b" + "c" + "d";` 只会生成一个"abcd"的字符串String对象。
+
