@@ -7,14 +7,14 @@
     <a href="https://github.com/OxCaffee/Open-Source-Note"><img src="https://img.shields.io/github/repo-size/OxCaffee/Open-Source-Note?icon=github&color=4ab8a1"/></a>
     <!-- <a><img src="https://img.shields.io/bitbucket/issues-raw/OxCaffee/Open-Source-Note?icon=github&color=4ab8a1"/></a> -->
 </div>
-
 ------------------------
 
 <!-- vscode-markdown-toc -->
-* [源码篇](#)
-* [实战篇](#-1)
-* [面试篇](#-1)
-* [开源项目篇](#-1)
+* 1. [源码篇](#)
+* 2. [实战篇](#-1)
+* 3. [面试篇](#-1)
+* 4. [架构篇](#-1)
+* 5. [开源项目篇](#-1)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
@@ -51,13 +51,6 @@
   * [Netty源码解析正式篇——选择器Selector](/doc/Netty/Selector.md)
   * [Netty源码解析正式篇——EventLoopGroup](/doc/Netty/EventLoopGroup.md)
   * [Netty源码解析正式篇——EventLoop](/doc/Netty/EventLoop.md)
-  * Netty源码解析正式篇——Promise
-  * Netty源码解析正式篇——ChannelPipeline和ChannelHandler
-  * Netty源码解析正式篇——Channel
-  * Netty源码解析正式篇——ByteBuf和Jemalloc
-  * Netty源码解析正式篇——Codec专题
-  * Netty源码解析正式篇——Util专题
-
 
 ##  2. <a name='-1'></a>实战篇
 
@@ -66,6 +59,12 @@
   * [MyBatis应用实践](/doc/ORM/MyBatis应用实践.md)
 * **:wrench:C/C++**
   * [C++ Primer Plus实例代码](/code/CppPrimerPlus) 
+* **:traffic_light:分布式高并发系统**
+  * [亿级流量架构——高并发限流原理与案例](/doc/思想/高并发限流原理与案例.md)
+  * [亿级流量架构——缓存模式的使用案例](/doc/思想/缓存模式使用实践.md)
+  * [亿级流量架构——线程隔离](/doc/思想/线程隔离.md)
+  * [亿级流量架构——服务的熔断限流保护](/doc/思想/Hystrix对服务熔断限流保护.md)
+  * [以及流量架构——Nginx负载均衡与代理](/doc/思想/Nginx实现负载与HTTP反向代理.md)
 
 ##  3. <a name='-1'></a>面试篇
 
@@ -86,13 +85,13 @@
 * **:thought_balloon:思想**
   * [面试题汇总——设计模式汇总](/doc/思想/设计模式汇总.md)
 
-## 架构篇
+##  4. <a name='-1'></a>架构篇
 
 * **:earth_americas:Web**
   * [Web框架的核心——深入理解Servlet](/doc/Web/深入理解Servlet.md)
 
 
-##  4. <a name='-1'></a>开源项目篇
+##  5. <a name='-1'></a>开源项目篇
 
 * [权限认证框架Sa-Token](doc/GVP项目/权限认证Sa-Token源码.md)
 * [苞米豆Dynamic DataSource SpringBoot Starter](/doc/GVP项目/BaomidouDDSS源码.md)
