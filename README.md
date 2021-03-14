@@ -81,6 +81,7 @@
   * [面试题汇总——RabbitMQ面试题](/doc/消息队列/RabbitMQ面试题.md)
   * [面试题汇总——MySQL面试题](/doc/数据库/MySQL面试题.md)
   * [面试题汇总——Java面试题](/doc/Java基础/Java面试题.md)
+  * [面试题汇总——Redis面试题](/doc/数据库/Redis面试题.md)
 * **:thought_balloon:思想**
   * [面试题汇总——设计模式汇总](/doc/思想/设计模式汇总.md)
   * [面试题汇总——软件工程概论](/doc/Design/软件工程概论.md)
