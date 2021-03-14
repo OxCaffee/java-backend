@@ -78,6 +78,7 @@
   * [面试题汇总——Spring面试题](/doc/Spring/Spring面试题.md)
   * [面试题汇总——Spring Boot面试题](/doc/Spring/SpringBoot面试题.md)
   * [面试题汇总——Spring MVC面试题](/doc/Spring/SpringMVC面试题.md)
+  * [面试题汇总——Spring Cloud面试题](/doc/Spring/SpringCloud面试题.md)
   * [面试题汇总——MyBatis面试题](/doc/ORM/MyBatis面试题总结.md)
   * [面试题汇总——RabbitMQ面试题](/doc/消息队列/RabbitMQ面试题.md)
   * [面试题汇总——MySQL面试题](/doc/数据库/MySQL面试题.md)
@@ -88,7 +89,7 @@
 ## 架构篇
 
 * **:earth_americas:Web**
-  * [面试题汇总——深入理解Servlet](/doc/Web/深入理解Servlet.md)
+  * [Web框架的核心——深入理解Servlet](/doc/Web/深入理解Servlet.md)
 
 
 ##  4. <a name='-1'></a>开源项目篇
