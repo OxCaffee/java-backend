@@ -58,8 +58,6 @@
 * **:building_construction:ORM**
   * [Hibernate应用实践](/doc/ORM/Hibernate应用实践.md)
   * [MyBatis应用实践](/doc/ORM/MyBatis应用实践.md)
-* **:wrench:C/C++**
-  * [C++ Primer Plus实例代码](/code/CppPrimerPlus) 
 * **:traffic_light:分布式高并发系统**
   * [亿级流量架构——高并发限流原理与案例](/doc/思想/高并发限流原理与案例.md)
   * [亿级流量架构——缓存模式的使用案例](/doc/思想/缓存模式使用实践.md)
@@ -85,6 +83,7 @@
   * [面试题汇总——Java面试题](/doc/Java基础/Java面试题.md)
 * **:thought_balloon:思想**
   * [面试题汇总——设计模式汇总](/doc/思想/设计模式汇总.md)
+  * [面试题汇总——软件工程概论](/doc/Design/软件工程概论.md)
 
 ##  4. <a name='-1'></a>架构篇
 
