@@ -88,11 +88,5 @@
 
 ##  4. <a name='-1'></a>架构篇
 
-* **:earth_americas:Web**
-  * [Web框架的核心——深入理解Servlet](/doc/Web/深入理解Servlet.md)
-
-
-##  5. <a name='-1'></a>开源项目篇
-
-* [权限认证框架Sa-Token](doc/GVP项目/权限认证Sa-Token源码.md)
-* [苞米豆Dynamic DataSource SpringBoot Starter](/doc/GVP项目/BaomidouDDSS源码.md)
+* [Web框架的核心——深入理解Servlet](/doc/Web/深入理解Servlet.md)
+* [Ajax跨域](./doc/Web/Ajax跨域.md)
