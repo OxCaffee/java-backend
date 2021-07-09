@@ -469,7 +469,7 @@ public class AuthenticationConfiguration {
 
 ##  4. <a name='-1'></a>过滤器
 
-###  4.1. <a name='SpringSecurity'></a>Spring Security默认核心过滤器
+###  4.1. <a name='SpringSecurity'></a>Spring Security核心过滤器
 
 ```java
 o.s.s.web.context.SecurityContextPersistenceFilter@8851ce1,
@@ -497,3 +497,66 @@ Spring security的过滤器日志有一个特点：log打印顺序与实际配�
 - SessionManagementFilter 和session相关的过滤器，内部维护了一个SessionAuthenticationStrategy，两者组合使用，常用来防止`session-fixation protection attack`，以及限制同一用户开启多个会话的数量
 - **ExceptionTranslationFilter** 直译成异常翻译过滤器，还是比较形象的，这个过滤器本身不处理异常，而是将认证过程中出现的异常交给内部维护的一些类去处理，具体是那些类下面详细介绍
 - **FilterSecurityInterceptor** 这个过滤器决定了访问特定路径应该具备的权限，访问的用户的角色，权限是什么？访问的路径需要什么样的角色和权限？这些判断和处理都是由该类进行的。
+
+### SecurityContextPersistenceFilter
+
+SecurityContextHolder存储在HttpSession中，当用户来访问的时候，先获取安全上下文，从上下文中再获取用户的信息。
+
+```java
+public class SecurityContextPersistenceFilter extends GenericFilterBean {
+
+   static final String FILTER_APPLIED = "__spring_security_scpf_applied";
+   //安全上下文存储的仓库
+   private SecurityContextRepository repo;
+
+   public SecurityContextPersistenceFilter() {
+      //HttpSessionSecurityContextRepository是SecurityContextRepository接口的一个实现类
+      //使用HttpSession来存储SecurityContext
+      this(new HttpSessionSecurityContextRepository());
+   }
+
+   public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+         throws IOException, ServletException {
+      HttpServletRequest request = (HttpServletRequest) req;
+      HttpServletResponse response = (HttpServletResponse) res;
+
+      if (request.getAttribute(FILTER_APPLIED) != null) {
+         // ensure that filter is only applied once per request
+         chain.doFilter(request, response);
+         return;
+      }
+      request.setAttribute(FILTER_APPLIED, Boolean.TRUE);
+      //包装request，response
+      HttpRequestResponseHolder holder = new HttpRequestResponseHolder(request,
+            response);
+      //从Session中获取安全上下文信息
+      SecurityContext contextBeforeChainExecution = repo.loadContext(holder);
+      try {
+         //请求开始时，设置安全上下文信息，这样就避免了用户直接从Session中获取安全上下文信息
+         SecurityContextHolder.setContext(contextBeforeChainExecution);
+         chain.doFilter(holder.getRequest(), holder.getResponse());
+      }
+      finally {
+         //请求结束后，清空安全上下文信息
+         SecurityContext contextAfterChainExecution = SecurityContextHolder
+               .getContext();
+         SecurityContextHolder.clearContext();
+         repo.saveContext(contextAfterChainExecution, holder.getRequest(),
+               holder.getResponse());
+         request.removeAttribute(FILTER_APPLIED);
+         if (debug) {
+            logger.debug("SecurityContextHolder now cleared, as request processing completed");
+         }
+      }
+   }
+}
+```
+
+### UsernamePasswordAuthenticationFilter
+
+<div align=center><img src="/assets/ss2.jpg"/></div>
+
+### AnonymousAuthenticationFilter
+
+对于Anonymous匿名身份的理解是Spirng Security为了整体逻辑的统一性，即使是未通过认证的用户，也给予了一个匿名身份。而`AnonymousAuthenticationFilter`该过滤器的位置也是非常的科学的，它位于常用的身份认证过滤器（如`UsernamePasswordAuthenticationFilter`、`BasicAuthenticationFilter`、`RememberMeAuthenticationFilter`）之后，意味着只有在上述身份过滤器执行完毕后，SecurityContext依旧没有用户信息，`AnonymousAuthenticationFilter`该过滤器才会有意义—-基于用户一个匿名身份。
+
