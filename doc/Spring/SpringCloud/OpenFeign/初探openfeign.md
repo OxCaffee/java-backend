@@ -1,6 +1,23 @@
 # Spring Cloud OpenFeign源码解析——初探OpenFeign
 
-## 从Feign的使用说起
+<!-- vscode-markdown-toc -->
+* 1. [从Feign的使用说起](#Feign)
+* 2. [@EnableFeignClients](#EnableFeignClients)
+* 3. [FeignClientsRegistrar](#FeignClientsRegistrar)
+	* 3.1. [ #registerDefaultConfiguration](#registerDefaultConfiguration)
+	* 3.2. [#registerClientConfiguration](#registerClientConfiguration)
+	* 3.3. [#registerFeignClients](#registerFeignClients)
+	* 3.4. [#registerFeignClient(重要!!!!!!!注册FeignClient的关键步骤)](#registerFeignClientFeignClient)
+	* 3.5. [#registerOptionsBeanDefinition](#registerOptionsBeanDefinition)
+* 4. [总结](#)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
+##  1. <a name='Feign'></a>从Feign的使用说起
 
 SpringCloud将Feign集成进自己的体系中，实现服务的声明式HTTP调用，相比于RestTemplate而言简化了代码的编写复杂度，提高了代码的可读性。
 
@@ -67,7 +84,7 @@ public class DemoConsumerApplication {
 
 上面就是SpringCloud Feign一个最基本的使用了，下面我们就开启Feign的探索之旅。
 
-## @EnableFeignClients
+##  2. <a name='EnableFeignClients'></a>@EnableFeignClients
 
 上面的示例代码中，@EnableFeignClients是加在启动类上的注解，故它完成了**服务消费者方** 有关的配置，简要代码如下:
 
@@ -98,7 +115,7 @@ public @interface EnableFeignClients {
 
 注意在@EnbaleFeignClient注解上还有一个FeignClientRegistrar类，从字面的角度来看，**大概是对FeignClient进行注册** ，下面我们就来看看这个类。
 
-## FeignClientsRegistrar
+##  3. <a name='FeignClientsRegistrar'></a>FeignClientsRegistrar
 
 FeignClientsRegistrar的类声明如下:
 
@@ -122,7 +139,7 @@ public void registerBeanDefinitions(AnnotationMetadata metadata, BeanDefinitionR
 
 下面具体看看两个方法:
 
-###  #registerDefaultConfiguration
+###  3.1. <a name='registerDefaultConfiguration'></a> #registerDefaultConfiguration
 
 ```java
 private void registerDefaultConfiguration(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
@@ -150,7 +167,7 @@ private void registerDefaultConfiguration(AnnotationMetadata metadata, BeanDefin
 2. 如果@EnableFeignClients注解上有显式指定defaultConfiguration属性，那么注解元数据中将注解元数据中的类名称前面加上`default.`字段
 3. 继续执行registerClientConfiguration方法
 
-### #registerClientConfiguration
+###  3.2. <a name='registerClientConfiguration'></a>#registerClientConfiguration
 
 ```java
 private void registerClientConfiguration(BeanDefinitionRegistry registry, Object name, Object configuration) {
@@ -179,7 +196,7 @@ class FeignClientSpecification implements NamedContextFactory.Specification {
 
 回归到registerClientConfiguration当中，会发现，真正执行注册的是最后一步，也就是`<1>`标注的地方，其中注册的beanDefinition的名称为`default.(可选)` + @EnableFeignClients中的类名 + FeignClient简单名称
 
-### #registerFeignClients
+###  3.3. <a name='registerFeignClients'></a>#registerFeignClients
 
 ```java
 	public void registerFeignClients(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
@@ -250,7 +267,7 @@ class FeignClientSpecification implements NamedContextFactory.Specification {
 4. 过滤出符合要求的BeanDefinition后，执行#registerClientConfiguration完成相应client的configuraton注册
 5. 执行#registerFeignClient完成真正的FeignClient注册
 
-### #registerFeignClient(重要!!!!!!!注册FeignClient的关键步骤)
+###  3.4. <a name='registerFeignClientFeignClient'></a>#registerFeignClient(重要!!!!!!!注册FeignClient的关键步骤)
 
 ```java
 	/**
@@ -337,7 +354,7 @@ class FeignClientSpecification implements NamedContextFactory.Specification {
 7. 创建FeignClient的bean，注册到BeanDefinitonHolder中
 8. 执行#registerOptionsBeanDefinition
 
-### #registerOptionsBeanDefinition
+###  3.5. <a name='registerOptionsBeanDefinition'></a>#registerOptionsBeanDefinition
 
 ```java
 	private void registerOptionsBeanDefinition(BeanDefinitionRegistry registry, String contextId) {
@@ -357,7 +374,7 @@ class FeignClientSpecification implements NamedContextFactory.Specification {
 	}
 ```
 
-## 总结
+##  4. <a name=''></a>总结
 
 至此，我们Feign的源码初探结束了，本次源码主要探索了Feign的主配置注解@EnableFeignClients和@FeignClient是如何工作，被发现，注册到Spring容器中去的，接下来的文章我们会继续探索Feign是如何完成服务的调用过程。
 
