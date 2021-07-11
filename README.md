@@ -47,6 +47,7 @@
   * **SpringCloud OpenFeign源码**
     * [SpringCloud OpenFeign源码解析——@EnableFeignClients工作流程](/doc/Spring/SpringCloud/OpenFeign/初探openfeign.md)
     * [SpringCloud OpenFeign源码解析——浅谈OpenFeign中的Configuration](/doc/Spring/SpringCloud/OpenFeign/初探openfeign之配置.md)
+    * [SpringCloud OpenFeign源码解析——OpenFeign如何生成代理](/doc/Spring/SpringCloud/OpenFeign/openfeign代理.md)
 * **:bullettrain_front:Dubbo**
   * [RPC框架Dubbo源码解析——SPI机制](/doc/RPC/SPI扩展机制)
   * [RPC框架Dubbo源码解析——服务暴露](/doc/RPC/服务暴露.md)
