@@ -31,23 +31,25 @@
   * [MyBatis源码解析——ResultSetHandler](/doc/ORM/MyBatis源码解析之ResultSetHandler.md)
 * **:leaves:Spring系列源码**
   * **Spring基础源码**
+    * [Spring源码解析——Resource资源加载策略](/doc/Spring/SpringFramework/Resource资源加载策略.md)
     * [Spring源码解析——ApplicationContext容器](/doc/Spring/容器的初始化之RootApplicationContext容器.md)
     * [Spring源码解析——IoC之Bean的加载](/doc/Spring/IoC之Bean的加载.md)
     * [Spring源码解析——IoC之Bean的创建](/doc/Spring/IoC之Bean的创建.md)
     * [Spring源码解析——IoC之Bean的生命周期](/doc/Spring/IoC之Bean的生命周期.md)
-  * **Spring MVC源码**
+  * **SpringMVC源码**
     * [SpringMVC源码解析——核心分发器DispatcherServlet](/doc/Spring/核心分发器DispatcherServlet.md)
     * [SpringMVC源码解析——HandlerMapping](/doc/Spring/MVC九大组件(一)之HandlerMapping.md)
     * [SpringMVC源码解析——HandlerAdapter](/doc/Spring/MVC九大组件(二)之HandlerAdapter.md)
     * [SpringMVC源码解析——ViewResolver](/doc/Spring/MVC九大组件(三)之ViewResolver.md)
-    * [SpringBoot源码解析——@SpringBootApplication和SpringApplication](/doc/Spring/@SpringBootApplication和SpringApplication.md)
-    * [SpringBoot源码解析——@ConfigurationProperties](/doc/Spring/@ConfigurationProperties.md)
   * **Spring Security源码**
     * [Spring Security源码解析](/doc/Spring/SpringSecurity.md)
   * **SpringCloud OpenFeign源码**
     * [SpringCloud OpenFeign源码解析——@EnableFeignClients工作流程](/doc/Spring/SpringCloud/OpenFeign/初探openfeign.md)
     * [SpringCloud OpenFeign源码解析——浅谈OpenFeign中的Configuration](/doc/Spring/SpringCloud/OpenFeign/初探openfeign之配置.md)
     * [SpringCloud OpenFeign源码解析——OpenFeign如何生成代理](/doc/Spring/SpringCloud/OpenFeign/openfeign代理.md)
+  * **SpringBoot源码**
+    * [SpringBoot源码解析——@SpringBootApplication和SpringApplication](/doc/Spring/@SpringBootApplication和SpringApplication.md)
+    * [SpringBoot源码解析——@ConfigurationProperties](/doc/Spring/@ConfigurationProperties.md)
 * **:bullettrain_front:Dubbo**
   * [RPC框架Dubbo源码解析——SPI机制](/doc/RPC/SPI扩展机制)
   * [RPC框架Dubbo源码解析——服务暴露](/doc/RPC/服务暴露.md)

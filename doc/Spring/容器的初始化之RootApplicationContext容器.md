@@ -15,7 +15,7 @@
 	/vscode-markdown-toc-config -->
 <!-- /vscode-markdown-toc -->
 
-##  1. <a name=''></a>前言言
+##  1. <a name=''></a>前言
 
 随着Spring Boot逐步全面覆盖到我们的项目之中，我们已经基本忘记了当前经典的Servlet+Spring MVC的组合，包括熟悉的`web.xml`配置。但是回到最初的起点去理解之前的配置，有利于我们更好的理解当前Spring Boot是如何更加精简的集成MVC的。下面就让我们看看Spring容器是如何初始化的。
 
