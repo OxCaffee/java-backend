@@ -32,7 +32,9 @@
 * **:leaves:Spring系列源码**
   * **Spring基础源码**
     * [Spring源码解析——Resource资源加载策略](/doc/Spring/SpringFramework/Resource资源加载策略.md)
-    * [Spring源码解析——ApplicationContext容器](/doc/Spring/容器的初始化之RootApplicationContext容器.md)
+    * [Spring源码解析——BeanDefinition到底是什么](/doc/Spring/SpringFramework/BeanDefinition到底是什么.md)
+    * [Spring源码解析——BeanDefinition装载全过程](/doc/Spring/SpringFramework/BeanDefinition装载全过程.md)
+    * [Spring源码解析——ApplicationContext容器](/doc/Spring/SpringFramework/ApplicationContext容器.md)
     * [Spring源码解析——IoC之Bean的加载](/doc/Spring/IoC之Bean的加载.md)
     * [Spring源码解析——IoC之Bean的创建](/doc/Spring/IoC之Bean的创建.md)
     * [Spring源码解析——IoC之Bean的生命周期](/doc/Spring/IoC之Bean的生命周期.md)
