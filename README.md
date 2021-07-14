@@ -33,6 +33,7 @@
   * **Spring基础源码**
     * [Spring源码解析——Resource资源加载策略](/doc/Spring/SpringFramework/Resource资源加载策略.md)
     * [Spring源码解析——BeanDefinition到底是什么](/doc/Spring/SpringFramework/BeanDefinition到底是什么.md)
+    * [Spring源码解析——BeanFactory接口架构分析](/doc/Spring/SpringFramework/BeanFactory架构接口分析.md)
     * [Spring源码解析——BeanDefinition装载全过程](/doc/Spring/SpringFramework/BeanDefinition装载全过程.md)
     * [Spring源码解析——ApplicationContext容器](/doc/Spring/SpringFramework/ApplicationContext容器.md)
     * [Spring源码解析——IoC之Bean的加载](/doc/Spring/IoC之Bean的加载.md)
