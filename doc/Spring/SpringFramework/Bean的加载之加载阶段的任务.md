@@ -235,3 +235,129 @@ AbstractBeanFactory对于所有的`#getBean` 操作，都进一步执行了`#doG
 	}
 ```
 
+上面的实现逻辑很复杂，我们一个方法一个方法地捋一下。
+
+## #transaformedBeanName从Bean的别名去获取原始名称
+
+这个方法是为了获取bean的最原始的名称，因为一个bean可能会有别名(alias)。
+
+```java
+//AbstractBeanFactory.java	
+	
+
+protected String transformedBeanName(String name) {
+    //BeanFactoryUtils.transformedBeanName()首先解耦factory bean prefix &， 然后将beanName放入缓存当中
+	return canonicalName(BeanFactoryUtils.transformedBeanName(name));
+}
+```
+
+```java
+//AbstractBeanFactory.java
+
+    public String canonicalName(String name) {
+		String canonicalName = name;
+		// Handle aliasing...
+		String resolvedName;
+		do {
+         	//<1>
+			resolvedName = this.aliasMap.get(canonicalName);
+			if (resolvedName != null) {
+				canonicalName = resolvedName;
+			}
+		}
+		while (resolvedName != null);
+		return canonicalName;
+	}
+```
+
+上面`<1>`处的代码很有意思，为什么要一个循环？这就类似于树的数组表示，如果A的别名是B，B的别名是C，而C是真名(raw name)，那么不断地用K-V获取，就可以获取到最后的raw name。
+
+所以上面看似是个循环算法，实际上是个递归算法。
+
+## #getSingleton尝试从单例缓存中去获取Bean(重要)
+
+实际上Spring容器中的Bean绝大多数都是单例模式(singleton)，这个设计模式想必也不陌生，可以说是面试中的重点了，一些Spring的面试题例如“你知道Spring中的设计模式有哪些？”等等，如果能把下面的源码讲清楚，那么一定是面试的加分项。
+
+回到源码解析，`#getSingleton`是DefaultListableBeanRegistry当中的方法，源码如下：
+
+```java
+	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+
+	    // <1>快速尝试获取该singleton bean
+        // singletonObjects是singleton bean的一个缓存cache
+        // 为什么首先从这里获取？因为Spring源码的实现是 先创建->存进缓存->在取出来返回
+		Object singletonObject = this.singletonObjects.get(beanName);
+
+		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+			//<2>如果获取不到该singleton bean，并且该singleton在创建的过程中，尝试正在创建过程的bean缓存中获取
+             // 至于为什么要这样分？等到后面我们理解了bean的声明周期lifecycle之后再回答 
+			singletonObject = this.earlySingletonObjects.get(beanName);
+
+			if (singletonObject == null && allowEarlyReference) {
+				//<3>如果该bean也不在in-creation缓存中，且允许 提前引用(即允许引用还未创建完成的bean)
+				synchronized (this.singletonObjects) {	// 对该单例缓存加锁lock(注意不是对 in-creation单例缓存加锁)
+					// 继续尝试从该单例缓存中获取bean
+					singletonObject = this.singletonObjects.get(beanName);
+                      //如果仍然获取不到
+					if (singletonObject == null) {
+                          //再一次尝试从in-creation单例缓存中获取bean
+						singletonObject = this.earlySingletonObjects.get(beanName);
+                          //如果in-creation单例缓存还获取不到，就说明该bean既不在in-creation状态，也不在created状态
+                          //那么只能直接创建
+						if (singletonObject == null) {
+                              //使用单例工厂创建bean
+							ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
+							if (singletonFactory != null) {
+								singletonObject = singletonFactory.getObject();
+                                   //in-creation单例缓存添加该bean，因为这个bean还需要一些后置化的操作
+								this.earlySingletonObjects.put(beanName, singletonObject);
+                                   //单例工厂中移除该beanFactory
+								this.singletonFactories.remove(beanName);
+							}
+						}
+					}
+				}
+			}
+		}
+		return singletonObject;
+	}
+```
+
+上述过程可以描述为下面的流程图：
+
+<div align=center><img src="../../../assets/sf6.png"/></div>
+
+### #getSingleton如何解决循环依赖问题(todo)
+
+### #markBeanAsCreated
+
+markBeanAsCreated用到了双重校验锁机制，来标注beanName对应的bean已经创建完成，其基本操作就是：
+
+```java
+	protected void markBeanAsCreated(String beanName) {
+        //加锁前校验
+		if (!this.alreadyCreated.contains(beanName)) {
+            //加锁
+			synchronized (this.mergedBeanDefinitions) {
+                //加锁后校验
+				if (!this.alreadyCreated.contains(beanName)) {
+					// Let the bean definition get re-merged now that we're actually creating
+					// the bean... just in case some of its metadata changed in the meantime.
+                    //这一步的目的是重新合并bean的定义，防止bean的元数据被修改
+					clearMergedBeanDefinition(beanName);
+                    //将该bean添加进created缓存
+					this.alreadyCreated.add(beanName);
+				}
+			}
+		}
+	}
+```
+
+
+
+## 总结
+
+太多了太乱了不想写了，等弄完系统的再回来补这一篇
+
+
+
