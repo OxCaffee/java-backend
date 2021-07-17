@@ -1,11 +1,10 @@
-<div align=center><img src="./assets/kn.png" width=45%></div>
+<div align=center><img src="./assets/logo.jpg" width=65%/></div>
 
 <div align="center">
     <a href="https://www.oxcaffee.github.io"> <img src="https://badgen.net/badge/OxCaffee/%E5%9C%A8%E7%BA%BF%E9%98%85%E8%AF%BB?icon=sourcegraph&color=4ab8a1"></a>
     <a href="https://github.com/OxCaffee/Open-Source-Note"> <img src="https://badgen.net/github/stars/OxCaffee/Open-Source-Note?icon=github&color=4ab8a1"></a>
     <a href="https://github.com/OxCaffee/Open-Source-Note"> <img src="https://badgen.net/github/forks/OxCaffee/Open-Source-Note?icon=github&color=4ab8a1"></a>
     <a href="https://github.com/OxCaffee/Open-Source-Note"><img src="https://img.shields.io/github/repo-size/OxCaffee/Open-Source-Note?icon=github&color=4ab8a1"/></a>
-    <!-- <a><img src="https://img.shields.io/bitbucket/issues-raw/OxCaffee/Open-Source-Note?icon=github&color=4ab8a1"/></a> -->
 </div>
 
 ------------------------
