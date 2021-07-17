@@ -1,6 +1,22 @@
-# SpringFramework源码解析——Bean的加载之加载阶段的任务
+# SpringFramework源码解析——AbstractBeanFactory
 
-## 前言
+<!-- vscode-markdown-toc -->
+* 1. [前言](#)
+* 2. [#getBean](#getBean)
+* 3. [#doGetBean(很重要)](#doGetBean)
+* 4. [#transaformedBeanName从Bean的别名去获取原始名称](#transaformedBeanNameBean)
+* 5. [#getSingleton尝试从单例缓存中去获取Bean(重要)](#getSingletonBean)
+* 6. [#getSingleton如何解决循环依赖问题(todo)](#getSingletontodo)
+* 7. [#markBeanAsCreated双重校验锁标注Bean创建完成](#markBeanAsCreatedBean)
+* 8. [#isSingleton检查beanName对应的Bean是否为单例](#isSingletonbeanNameBean)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
+##  1. <a name=''></a>前言
 
 Spring在**容器初始化**阶段，将配置文件中的配置信息通过ResourceLoader和Resource等组件读取，封装，之后容器会对加载后的配置信息进行解析，验证，最后将解析后的信息封装在BeanDefinition中，再注册进BeanDefinitionRegistry，进而存储到Spring容器里。
 
@@ -14,9 +30,7 @@ Spring在**容器初始化**阶段，将配置文件中的配置信息通过Reso
 
 可以看到AbstractBeanFactory是其他BeanFactory的抽象基类，很多接口方法的原始定义都可以在这里找到。
 
-## AbstractBeanFactory
-
-### #getBean
+##  2. <a name='getBean'></a>#getBean
 
 AbstractBeanFactory对于所有的`#getBean` 操作，都进一步执行了`#doGetBean` 这个通用方法。
 
@@ -48,7 +62,7 @@ AbstractBeanFactory对于所有的`#getBean` 操作，都进一步执行了`#doG
 	}
 ```
 
-### #doGetBean(很重要)
+##  3. <a name='doGetBean'></a>#doGetBean(很重要)
 
 ```java
 	protected <T> T doGetBean(
@@ -237,7 +251,7 @@ AbstractBeanFactory对于所有的`#getBean` 操作，都进一步执行了`#doG
 
 上面的实现逻辑很复杂，我们一个方法一个方法地捋一下。
 
-## #transaformedBeanName从Bean的别名去获取原始名称
+##  4. <a name='transaformedBeanNameBean'></a>#transaformedBeanName从Bean的别名去获取原始名称
 
 这个方法是为了获取bean的最原始的名称，因为一个bean可能会有别名(alias)。
 
@@ -274,7 +288,7 @@ protected String transformedBeanName(String name) {
 
 所以上面看似是个循环算法，实际上是个递归算法。
 
-## #getSingleton尝试从单例缓存中去获取Bean(重要)
+##  5. <a name='getSingletonBean'></a>#getSingleton尝试从单例缓存中去获取Bean(重要)
 
 实际上Spring容器中的Bean绝大多数都是单例模式(singleton)，这个设计模式想必也不陌生，可以说是面试中的重点了，一些Spring的面试题例如“你知道Spring中的设计模式有哪些？”等等，如果能把下面的源码讲清楚，那么一定是面试的加分项。
 
@@ -327,9 +341,9 @@ protected String transformedBeanName(String name) {
 
 <div align=center><img src="../../../assets/sf6.png"/></div>
 
-### #getSingleton如何解决循环依赖问题(todo)
+##  6. <a name='getSingletontodo'></a>#getSingleton如何解决循环依赖问题(todo)
 
-### #markBeanAsCreated
+##  7. <a name='markBeanAsCreatedBean'></a>#markBeanAsCreated双重校验锁标注Bean创建完成
 
 markBeanAsCreated用到了双重校验锁机制，来标注beanName对应的bean已经创建完成，其基本操作就是：
 
@@ -353,11 +367,65 @@ markBeanAsCreated用到了双重校验锁机制，来标注beanName对应的bean
 	}
 ```
 
+##  8. <a name='isSingletonbeanNameBean'></a>#isSingleton检查beanName对应的Bean是否为单例
+
+Spring是如何检查beanName对应的bean是否是单例的呢？
+
+```java
+	public boolean isSingleton(String name) throws NoSuchBeanDefinitionException {
+        //获取bean的原始名称
+		String beanName = transformedBeanName(name);
+
+        //从单例缓存中获取bean
+		Object beanInstance = getSingleton(beanName, false);
+        //如果单例缓存中存在bean
+		if (beanInstance != null) {
+            //如果该单例bean是FactoryBean
+			if (beanInstance instanceof FactoryBean) {
+				return (BeanFactoryUtils.isFactoryDereference(name) || ((FactoryBean<?>) beanInstance).isSingleton());
+			}
+			else {
+				return !BeanFactoryUtils.isFactoryDereference(name);
+			}
+		}
+
+		// No singleton instance found -> check bean definition.
+        //如果单例缓存中没有bean实例，那么该bean可能没有被创建
+        //此时检查BeanDefinition
+		BeanFactory parentBeanFactory = getParentBeanFactory();
+		if (parentBeanFactory != null && !containsBeanDefinition(beanName)) {
+			// 当前factory没有发现BeanDefinition，委托给父Factory
+			return parentBeanFactory.isSingleton(originalBeanName(name));
+		}
+
+        //当前Factory查到definition
+		RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
+
+		// In case of FactoryBean, return singleton status of created object if not a dereference.
+        //如果该BeanDefinition是单例
+		if (mbd.isSingleton()) {
+            //检查是否是factoryBean
+			if (isFactoryBean(beanName, mbd)) {
+                //如果factoryBean前缀解耦，那么是单例
+				if (BeanFactoryUtils.isFactoryDereference(name)) {
+					return true;
+				}
+                //获取factoryBean，检查该factoryBean是否是单例
+				FactoryBean<?> factoryBean = (FactoryBean<?>) getBean(FACTORY_BEAN_PREFIX + beanName);
+				return factoryBean.isSingleton();
+			}
+			else {
+                //如果该beanName前缀没有&，说明不是factoryBean，只是普通的bean，直接返回该bean是否是单例
+				return !BeanFactoryUtils.isFactoryDereference(name);
+			}
+		}
+		else {
+			return false;
+		}
+	}
+```
 
 
-## 总结
-
-太多了太乱了不想写了，等弄完系统的再回来补这一篇
 
 
 

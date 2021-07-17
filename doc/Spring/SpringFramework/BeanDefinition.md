@@ -357,5 +357,180 @@ GenericBeanDefinition的patentName属性指定了当前类的父类，最重要�
 
 顾名思义，被扫描注册的bean和被注解声明的bean
 
+## 合并了Bean的定义——MergedBeanDefinition
 
+在Spring中,关于bean定义,其Java建模模型是接口BeanDefinition, 其变种有RootBeanDefinition，ChildBeanDefinition，还有GenericBeanDefinition，AnnotatedGenericBeanDefinition,ScannedGenericBeanDefinition等等。这些概念模型抽象了不同的关注点。关于这些概念模型，除了有概念，也有相应的Java建模模型，甚至还有通用的实现部分AbstractBeanDefinition。但事实上，关于BeanDefinition，还有一个概念也很重要，这就是MergedBeanDefinition(中文也许应该翻译成"合并了的bean定义"?),但这个概念并没有相应的Java模型对应。但是它确实存在，并且Spring专门为它提供了一个生命周期回调定义接口MergedBeanDefinitionPostProcessor用于扩展。
+
+### MergedBeanDefinition如何生成的
+
+我们先从代码看一个`MergedBeanDefinition`是怎么生成的 ? 下面是类`AbstractBeanFactory`中`bean`获取方法`doGetBean()`的伪代码 :
+
+```java
+protected <T> T doGetBean(final String name, @Nullable final Class<T> requiredType,
+			@Nullable final Object[] args, boolean typeCheckOnly) throws BeansException {
+	// ...
+	// 这里根据bean名称获取MergedBeanDefinition，结果类型是RootBeanDefinition 
+	final RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
+	// ...		
+	createBean(beanName, mbd, args);
+	
+	// ...
+}
+```
+
+从上面代码可见，通过方法`getMergedLocalBeanDefinition()`，一个`RootBeanDefinition mbd`根据`bean`名称生成了。我们进而跟踪`getMergedLocalBeanDefinition`的实现。如下 :
+
+```java
+	/**
+	 * Return a merged RootBeanDefinition, traversing the parent bean definition
+	 * if the specified bean corresponds to a child bean definition.
+	 * @param beanName the name of the bean to retrieve the merged definition for
+	 * @return a (potentially merged) RootBeanDefinition for the given bean
+	 * @throws NoSuchBeanDefinitionException if there is no bean with the given name
+	 * @throws BeanDefinitionStoreException in case of an invalid bean definition
+	 */
+	protected RootBeanDefinition getMergedLocalBeanDefinition(String beanName) 
+	throws BeansException {
+		// Quick check on the concurrent map first, with minimal locking.
+		RootBeanDefinition mbd = this.mergedBeanDefinitions.get(beanName);
+		if (mbd != null) {
+			return mbd;
+		}
+		return getMergedBeanDefinition(beanName, getBeanDefinition(beanName));
+	}
+
+	/**
+	 * Return a RootBeanDefinition for the given top-level bean, by merging with
+	 * the parent if the given bean's definition is a child bean definition.
+	 * @param beanName the name of the bean definition
+	 * @param bd the original bean definition (Root/ChildBeanDefinition)
+	 * @return a (potentially merged) RootBeanDefinition for the given bean
+	 * @throws BeanDefinitionStoreException in case of an invalid bean definition
+	 */	
+	protected RootBeanDefinition getMergedBeanDefinition(String beanName, BeanDefinition bd)
+			throws BeanDefinitionStoreException {
+
+		return getMergedBeanDefinition(beanName, bd, null);
+	}
+
+	/**
+	 * Return a RootBeanDefinition for the given bean, by merging with the
+	 * parent if the given bean's definition is a child bean definition.
+	 * @param beanName the name of the bean definition
+	 * @param bd the original bean definition (Root/ChildBeanDefinition)
+	 * @param containingBd the containing bean definition in case of inner bean,
+	 * or null in case of a top-level bean
+	 * @return a (potentially merged) RootBeanDefinition for the given bean
+	 * @throws BeanDefinitionStoreException in case of an invalid bean definition
+	 */		
+	protected RootBeanDefinition getMergedBeanDefinition(
+			String beanName, BeanDefinition bd, @Nullable BeanDefinition containingBd)
+			throws BeanDefinitionStoreException {
+
+		synchronized (this.mergedBeanDefinitions) {
+			// 准备一个RootBeanDefinition变量引用，用于记录要构建和最终要返回的BeanDefinition，
+			// 这里根据上下文不难猜测 mbd 应该就是 mergedBeanDefinition 的缩写。
+			RootBeanDefinition mbd = null;
+
+			// Check with full lock now in order to enforce the same merged instance.
+			if (containingBd == null) {
+				mbd = this.mergedBeanDefinitions.get(beanName);
+			}
+
+			if (mbd == null) {
+				if (bd.getParentName() == null) {
+					// bd不是一个ChildBeanDefinition的情况,换句话讲，这 bd应该是 :
+					// 1. 一个独立的 GenericBeanDefinition 实例，parentName 属性为null
+					// 2. 或者是一个 RootBeanDefinition 实例，parentName 属性为null
+					// 此时mbd直接使用一个bd的复制品
+					// Use copy of given root bean definition.
+					if (bd instanceof RootBeanDefinition) {						
+						mbd = ((RootBeanDefinition) bd).cloneBeanDefinition();
+					}
+					else {
+						mbd = new RootBeanDefinition(bd);
+					}
+				}
+				else {
+					// bd是一个ChildBeanDefinition的情况,
+					// 这种情况下，需要将bd和其parent bean definition 合并到一起，
+					// 形成最终的 mbd
+					// 下面是获取bd的 parent bean definition 的过程，最终结果记录到 pbd，
+					// 并且可以看到该过程中递归使用了getMergedBeanDefinition(), 为什么呢?
+					// 因为 bd 的 parent bd 可能也是个ChildBeanDefinition，所以该过程
+					// 需要递归处理
+					// Child bean definition: needs to be merged with parent.
+					BeanDefinition pbd;
+					try {
+						String parentBeanName = transformedBeanName(bd.getParentName());
+						if (!beanName.equals(parentBeanName)) {
+							pbd = getMergedBeanDefinition(parentBeanName);
+						}
+						else {
+							BeanFactory parent = getParentBeanFactory();
+							if (parent instanceof ConfigurableBeanFactory) {
+								pbd = ((ConfigurableBeanFactory) 
+									parent).getMergedBeanDefinition(parentBeanName);
+							}
+							else {
+								throw new NoSuchBeanDefinitionException(parentBeanName,
+										"Parent name '" + parentBeanName + 
+										"' is equal to bean name '" + beanName +
+							"': cannot be resolved without an AbstractBeanFactory parent");
+							}
+						}
+					}
+					catch (NoSuchBeanDefinitionException ex) {
+						throw new BeanDefinitionStoreException(
+							bd.getResourceDescription(), beanName,
+								"Could not resolve parent bean definition '" + 
+								bd.getParentName() + "'", ex);
+					}
+					// Deep copy with overridden values.
+					// 现在已经获取 bd 的parent bd到pbd，从上面的过程可以看出，这个pbd
+					// 也是已经"合并"过的。
+					// 这里根据pbd创建最终的mbd，然后再使用bd覆盖一次，
+					// 这样就相当于mbd来自两个BeanDefinition:
+					// 当前 BeanDefinition 及其合并的("Merged")双亲 BeanDefinition,
+					// 然后mbd就是针对当前bd的一个MergedBeanDefinition(合并的BeanDefinition)了。
+					mbd = new RootBeanDefinition(pbd);
+					mbd.overrideFrom(bd);
+				}
+
+				// Set default singleton scope, if not configured before.
+				if (!StringUtils.hasLength(mbd.getScope())) {
+					mbd.setScope(RootBeanDefinition.SCOPE_SINGLETON);
+				}
+
+				// A bean contained in a non-singleton bean cannot be a singleton itself.
+				// Let's correct this on the fly here, since this might be the result of
+				// parent-child merging for the outer bean, in which case the original 
+				// inner bean
+				// definition will not have inherited the merged outer bean's singleton status.
+				if (containingBd != null && !containingBd.isSingleton() && mbd.isSingleton()) {
+					mbd.setScope(containingBd.getScope());
+				}
+
+				// Cache the merged bean definition for the time being
+				// (it might still get re-merged later on in order to pick up metadata changes)
+				if (containingBd == null && isCacheBeanMetadata()) {
+					this.mergedBeanDefinitions.put(beanName, mbd);
+				}
+			}
+
+			return mbd;
+		}
+	}
+```
+
+从上面的`MergedBeanDefinition`的获取过程可以看出，一个`MergedBeanDefinition`其实就是一个"合并了的BeanDefinition"，最终以 **`RootBeanDefinition`** 的类型存在。
+
+### MergedBeanDefinition的总结
+
+综上可见，一个MergedBeanDefinition是这样一个载体:
+
+* 根据原始BeanDefinition及其可能存在的双亲BeanDefinition中的bean定义信息"合并"而得来的一个RootBeanDefinition；
+* 每个Bean的创建需要的是一个MergedBeanDefinition，也就是需要基于原始BeanDefinition及其双亲BeanDefinition信息得到一个信息"合并"之后的BeanDefinition；
+* Spring框架同时提供了一个机会给框架其他部分，或者开发人员用于在bean创建过程中，MergedBeanDefinition生成之后，bean属性填充之前，对该bean和该MergedBeanDefinition做一次回调，相应的回调接口是MergedBeanDefinitionPostProcessor。
+* MergedBeanDefinition没有相应的Spring建模，它是处于一个内部使用目的合并自其它BeanDefinition对象，其具体对象所使用的实现类类型是RootBeanDefinition。
 
