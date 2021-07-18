@@ -1,12 +1,36 @@
 # SpringFramework源码解析——Bean的声明周期源码+图解
 
-## Bean的获取
+<!-- vscode-markdown-toc -->
+* 1. [Bean的获取](#Bean)
+	* 1.1. [流程图](#)
+	* 1.2. [AbstractBeanFactory#doGetBean](#AbstractBeanFactorydoGetBean)
+* 2. [Bean创建之前的准备](#Bean-1)
+	* 2.1. [流程图](#-1)
+* 3. [AbstractAutowireCapableBeanFactory#createBean](#AbstractAutowireCapableBeanFactorycreateBean)
+* 4. [Bean的创建粗略过程](#Bean-1)
+	* 4.1. [流程图](#-1)
+	* 4.2. [AbstractAutowireCapableBeanFactory#doCreateBean](#AbstractAutowireCapableBeanFactorydoCreateBean)
+	* 4.3. [Bean的创建过程中的实例化Bean过程](#BeanBean)
+	* 4.4. [流程图](#-1)
+	* 4.5. [AbstractAutowireCapableBeanFactory#createBeanInstance](#AbstractAutowireCapableBeanFactorycreateBeanInstance)
+* 5. [Bean的创建过程中的属性填充](#Bean-1)
+* 6. [Bean创建完成后的初始化](#Bean-1)
+	* 6.1. [流程图](#-1)
+	* 6.2. [AbstractAutowireCapableBeanFactory#initializeBean](#AbstractAutowireCapableBeanFactoryinitializeBean)
 
-### 流程图
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
+
+##  1. <a name='Bean'></a>Bean的获取
+
+###  1.1. <a name=''></a>流程图
 
 <div align=center><img src="../../../assets/sfc11.png"/></div>
 
-### AbstractBeanFactory#doGetBean
+###  1.2. <a name='AbstractBeanFactorydoGetBean'></a>AbstractBeanFactory#doGetBean
 
 ```java
 //AbstractBeanFactory.java
@@ -194,13 +218,13 @@
 	}
 ```
 
-## Bean创建之前的准备
+##  2. <a name='Bean-1'></a>Bean创建之前的准备
 
-### 流程图
+###  2.1. <a name='-1'></a>流程图
 
 <div align=center><img src="../../../assets/sfc12.jpg"/></div>
 
-## AbstractAutowireCapableBeanFactory#createBean
+##  3. <a name='AbstractAutowireCapableBeanFactorycreateBean'></a>AbstractAutowireCapableBeanFactory#createBean
 
 ```java
 //AbstractAutowireCapableBeanFactory.java
@@ -279,13 +303,13 @@
 ​```
 ```
 
-## 真正创建Bean
+##  4. <a name='Bean-1'></a>Bean的创建粗略过程
 
-### 流程图
+###  4.1. <a name='-1'></a>流程图
 
 <div align=center><img src="../../../assets/sfc13.png"/></div>
 
-### AbstractAutowireCapableBeanFactory#doCreateBean
+###  4.2. <a name='AbstractAutowireCapableBeanFactorydoCreateBean'></a>AbstractAutowireCapableBeanFactory#doCreateBean
 
 ```java
 //AbstractAutowireCapableBeanFactory.java
@@ -404,6 +428,215 @@
 		}
 
 		return exposedObject;
+	}
+```
+
+###  4.3. <a name='BeanBean'></a>Bean的创建过程中的实例化Bean过程
+
+###  4.4. <a name='-1'></a>流程图
+
+<div align=center><img src="../../../assets/sfc14.png"/></div>
+
+###  4.5. <a name='AbstractAutowireCapableBeanFactorycreateBeanInstance'></a>AbstractAutowireCapableBeanFactory#createBeanInstance
+
+```java
+	protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
+		// 创建bean之前首先解析bean的class对象
+		Class<?> beanClass = resolveBeanClass(mbd, beanName);
+
+		if (beanClass != null && !Modifier.isPublic(beanClass.getModifiers()) && !mbd.isNonPublicAccessAllowed()) {
+			throw new BeanCreationException(mbd.getResourceDescription(), beanName,
+					"Bean class isn't public, and non-public access not allowed: " + beanClass.getName());
+		}
+
+		Supplier<?> instanceSupplier = mbd.getInstanceSupplier();
+		if (instanceSupplier != null) {
+			return obtainFromSupplier(instanceSupplier, beanName);
+		}
+
+		if (mbd.getFactoryMethodName() != null) {
+			return instantiateUsingFactoryMethod(beanName, mbd, args);
+		}
+
+		// Shortcut when re-creating the same bean...
+		boolean resolved = false;
+		boolean autowireNecessary = false;
+		if (args == null) {
+			synchronized (mbd.constructorArgumentLock) {
+				if (mbd.resolvedConstructorOrFactoryMethod != null) {
+					resolved = true;
+					autowireNecessary = mbd.constructorArgumentsResolved;
+				}
+			}
+		}
+		if (resolved) {
+			if (autowireNecessary) {
+				// 构造器注入bean
+				return autowireConstructor(beanName, mbd, null, null);
+			}
+			else {
+				return instantiateBean(beanName, mbd);
+			}
+		}
+
+		// Candidate constructors for autowiring?
+		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
+				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
+			return autowireConstructor(beanName, mbd, ctors, args);
+		}
+
+		// Preferred constructors for default construction?
+		ctors = mbd.getPreferredConstructors();
+		if (ctors != null) {
+			return autowireConstructor(beanName, mbd, ctors, null);
+		}
+
+		// No special handling: simply use no-arg constructor.
+		return instantiateBean(beanName, mbd);
+	}
+```
+
+##  5. <a name='Bean-1'></a>Bean的创建过程中的属性填充
+
+```java
+// org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory
+protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {
+  // 如果 BeanWrapper 为 null ，并且 RootBeanDefinition 还存在属性，则抛出异常，因为无法给空对象填充属性
+  if (bw == null) {
+    if (mbd.hasPropertyValues()) {
+      throw new BeanCreationException(
+        mbd.getResourceDescription(), beanName, "Cannot apply property values to null instance");
+    }
+    else {
+      // Skip property population phase for null instance.
+      // 没有属性，直接返回 跳过填充步骤
+      return;
+    }
+  }
+	
+  // <1> 在设置属性之前给 InstantiationAwareBeanPostProcessors 一个改变 bean 的机会，其应用场景是 自定义的字段注入。
+  // Give any InstantiationAwareBeanPostProcessors the opportunity to modify the
+  // state of the bean before properties are set. This can be used, for example,
+  // to support styles of field injection.
+  // 判断 bean 是由应用程序本身定义，并且持有 InstantiationAwareBeanPostProcessors
+  if (!mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
+    // 遍历所有的 BeanPostProcessor 
+    for (BeanPostProcessor bp : getBeanPostProcessors()) {
+      // 如果类型是 InstantiationAwareBeanPostProcessor
+      if (bp instanceof InstantiationAwareBeanPostProcessor) {
+        InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;			
+        
+        if (!ibp.postProcessAfterInstantiation(bw.getWrappedInstance(), beanName)) {
+          return;
+        }
+      }
+    }
+  }
+	// Bean 的所有属性值
+  PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
+  
+  // <2> 判断注入的类型 
+  // AUTOWIRE_BY_NAME —— 根据名称自动注入 
+  // AUTOWIRE_BY_TYPE —— 根据类型自动注入
+  int resolvedAutowireMode = mbd.getResolvedAutowireMode();
+  if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
+    // MutablePropertyValues 允许对属性进行简单操作，并提供了构造函数支持 Map 的深度复制和构造
+    MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
+    // Add property values based on autowire by name if applicable.
+    if (resolvedAutowireMode == AUTOWIRE_BY_NAME) {
+      autowireByName(beanName, mbd, bw, newPvs);
+    }
+    // Add property values based on autowire by type if applicable.
+    if (resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
+      autowireByType(beanName, mbd, bw, newPvs);
+    }
+    pvs = newPvs;
+  }
+ 
+  // 是否注册了 InstantiationAwareBeanPostProcessors
+  boolean hasInstAwareBpps = hasInstantiationAwareBeanPostProcessors();
+  // 是否需要依赖检查
+  boolean needsDepCheck = (mbd.getDependencyCheck() != AbstractBeanDefinition.DEPENDENCY_CHECK_NONE);
+	
+  PropertyDescriptor[] filteredPds = null;
+  if (hasInstAwareBpps) {
+    if (pvs == null) {
+      pvs = mbd.getPropertyValues();
+    }
+    // <3> 遍历 BeanPostProcessor 
+    for (BeanPostProcessor bp : getBeanPostProcessors()) {
+      if (bp instanceof InstantiationAwareBeanPostProcessor) {
+        InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;			
+        PropertyValues pvsToUse = ibp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
+        if (pvsToUse == null) {
+          // 从 bw 对象中提取 PropertyDescriptor 结果集
+          // PropertyDescriptor ——> 通过一对存取方法提取一个属性
+          if (filteredPds == null) {
+            filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
+          }
+          pvsToUse = ibp.postProcessPropertyValues(pvs, filteredPds, bw.getWrappedInstance(), beanName);
+          if (pvsToUse == null) {
+            return;
+          }
+        }
+        pvs = pvsToUse;
+      }
+    }
+  }
+  if (needsDepCheck) {
+    if (filteredPds == null) {
+      filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
+    }
+    // <4> 检查依赖
+    checkDependencies(beanName, mbd, filteredPds, pvs);
+  }
+	
+  // <5>  将属性填充到 bean 中
+  if (pvs != null) {
+    applyPropertyValues(beanName, mbd, bw, pvs);
+  }
+}
+```
+
+##  6. <a name='Bean-1'></a>Bean创建完成后的初始化
+
+###  6.1. <a name='-1'></a>流程图
+
+<div align=center><img src="../../../assets/sfc15.png"/></div>
+
+###  6.2. <a name='AbstractAutowireCapableBeanFactoryinitializeBean'></a>AbstractAutowireCapableBeanFactory#initializeBean
+
+```java
+	protected Object initializeBean(String beanName, Object bean, @Nullable RootBeanDefinition mbd) {
+		if (System.getSecurityManager() != null) {
+			AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
+				invokeAwareMethods(beanName, bean);
+				return null;
+			}, getAccessControlContext());
+		}
+		else {
+			invokeAwareMethods(beanName, bean);
+		}
+
+		Object wrappedBean = bean;
+		if (mbd == null || !mbd.isSynthetic()) {
+			wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
+		}
+
+		try {
+			invokeInitMethods(beanName, wrappedBean, mbd);
+		}
+		catch (Throwable ex) {
+			throw new BeanCreationException(
+					(mbd != null ? mbd.getResourceDescription() : null),
+					beanName, "Invocation of init method failed", ex);
+		}
+		if (mbd == null || !mbd.isSynthetic()) {
+			wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
+		}
+
+		return wrappedBean;
 	}
 ```
 
